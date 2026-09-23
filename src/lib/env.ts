@@ -4,7 +4,8 @@ import { z } from "zod";
 // literally (process.env.NEXT_PUBLIC_X), not via dynamic lookup.
 const publicSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3000"),
-  NEXT_PUBLIC_SUPABASE_URL: z.url(),
+  // Only the origin is valid: people often paste the Data API URL (".../rest/v1/").
+  NEXT_PUBLIC_SUPABASE_URL: z.url().transform((u) => new URL(u).origin),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),
