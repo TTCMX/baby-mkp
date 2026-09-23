@@ -16,9 +16,10 @@ export function isProtectedPath(pathname: string) {
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return response;
+  if (!rawUrl || !key) return response;
+  const url = new URL(rawUrl).origin;
 
   const supabase = createServerClient(url, key, {
     cookies: {
