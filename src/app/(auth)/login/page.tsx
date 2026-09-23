@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <p className="mb-6 mt-1 text-sm text-muted-foreground">Entra para comprar, vender y guardar favoritos.</p>
       {error && (
         <p role="alert" className="mb-4 text-sm font-semibold text-destructive">
-          El enlace no es válido o ya expiró. Intenta entrar de nuevo.
+          No pudimos abrir tu sesión con ese enlace. Si ya confirmaste tu correo, entra con tu contraseña.
         </p>
       )}
       <AuthForm mode="login" next={nextPath} />
