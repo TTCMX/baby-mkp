@@ -1,0 +1,3 @@
+-- Development / preview-branch sample data only (never runs in production).
+-- Reference data the app needs (categories, brands, platform_settings) lives in
+-- supabase/migrations/20260923000004_reference_data.sql.
