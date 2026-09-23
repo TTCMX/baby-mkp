@@ -52,11 +52,8 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
     },
   });
   if (error) {
-    const msg =
-      error.code === "user_already_exists"
-        ? "Ya existe una cuenta con ese correo"
-        : "No pudimos crear tu cuenta. Intenta de nuevo.";
-    return { error: msg, fields };
+    console.error("[auth] signUp failed", { code: error.code, status: error.status, message: error.message });
+    return { error: signUpErrorMessage(error.code, error.message), fields };
   }
 
   if (data.user) await track("user_registered", data.user.id);
@@ -64,6 +61,27 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
   // Email confirmation disabled → we already have a session.
   if (data.session) redirect(next);
   return { message: "Te enviamos un correo para confirmar tu cuenta." };
+}
+
+function signUpErrorMessage(code: string | undefined, message: string): string {
+  switch (code) {
+    case "user_already_exists":
+    case "email_exists":
+      return "Ya existe una cuenta con ese correo";
+    case "weak_password":
+      return "Esa contraseña es muy débil. Usa una más larga, con letras y números.";
+    case "email_address_invalid":
+      return "Ese correo no es válido. Usa un correo real.";
+    case "over_email_send_rate_limit":
+    case "over_request_rate_limit":
+      return "Se enviaron demasiados correos. Espera unos minutos e intenta de nuevo.";
+    case "signup_disabled":
+    case "email_provider_disabled":
+      return "El registro con correo está desactivado en este momento.";
+  }
+  if (/sending.*email/i.test(message)) return "No pudimos enviar el correo de confirmación. Intenta más tarde.";
+  if (/database error/i.test(message)) return "No pudimos preparar tu perfil. Ya lo estamos revisando.";
+  return "No pudimos crear tu cuenta. Intenta de nuevo.";
 }
 
 export async function signOut() {
