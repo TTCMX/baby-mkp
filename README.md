@@ -19,16 +19,17 @@ npm run dev
 
 Para hacer admin a un usuario: `update profiles set role = 'admin' where username = '...';`
 
-## Despliegue (Supabase ↔ GitHub)
+## Despliegue de la base de datos
 
-El proyecto de Supabase está conectado a este repo con la integración de GitHub:
+`.github/workflows/supabase-migrations.yml` aplica `supabase/migrations/` al proyecto de Supabase
+en cada push a `main` (también se puede lanzar a mano desde la pestaña Actions). Funciona en el plan gratuito.
+Requiere los secrets de GitHub `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_ID` y `SUPABASE_DB_PASSWORD`.
 
-- Al hacer merge a la rama de producción, Supabase aplica las migraciones nuevas de `supabase/migrations/`.
-  Nunca se edita una migración ya aplicada: cada cambio de esquema es un archivo nuevo (`npx supabase migration new <nombre>`).
-- `seed.sql` **no** corre en producción, solo en local y en ramas de preview. Los datos que la app necesita
+- Nunca se edita una migración ya aplicada: cada cambio de esquema es un archivo nuevo (`npx supabase migration new <nombre>`).
+- `seed.sql` **no** corre en producción. Los datos que la app necesita
   (categorías, marcas, `platform_settings`) están en la migración `..._reference_data.sql`.
 - En Supabase → Authentication → URL Configuration: `Site URL` = dominio de producción y en
-  Redirect URLs `https://<dominio>/auth/callback` (y `https://*-<equipo>.vercel.app/auth/callback` para previews).
+  Redirect URLs `https://<dominio>/auth/callback`.
 - En Vercel: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
   `SUPABASE_SECRET_KEY` (esta última solo en el servidor).
 
