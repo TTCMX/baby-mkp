@@ -16,10 +16,12 @@ export async function processPayout(orderId: string): Promise<PayoutResult> {
   const admin = createAdminClient();
   const { data: order } = await admin
     .from("orders")
-    .select("id, seller_id, status, disputed_at, seller_net_cents, currency")
+    .select("id, seller_id, status, disputed_at, dispute_resolved_at, seller_net_cents, currency")
     .eq("id", orderId)
     .maybeSingle();
-  if (!order || order.status !== "completed" || order.disputed_at) return "not_eligible";
+  // An open dispute blocks the payout; once an admin resolves it for the seller, it can go.
+  if (!order || order.status !== "completed" || (order.disputed_at && !order.dispute_resolved_at))
+    return "not_eligible";
 
   const { data: existing } = await admin
     .from("payouts")
