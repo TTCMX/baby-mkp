@@ -104,7 +104,7 @@ export function FamilyHome({
         </div>
 
         <div ref={track} className="relative -mx-5 overflow-x-auto px-5 [scrollbar-width:none] md:mx-0 md:px-0">
-          <ol className="grid min-w-[640px] grid-cols-7 gap-1.5" aria-label="Etapas">
+          <ol className="grid min-w-[720px] grid-cols-8 gap-1.5" aria-label="Etapas">
             {baby.timeline.map((step) => (
               <TimelineItem key={step.stage} step={step} />
             ))}

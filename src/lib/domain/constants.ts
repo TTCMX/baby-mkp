@@ -12,6 +12,7 @@ export type ListingCondition = keyof typeof LISTING_CONDITIONS;
 
 export const AGE_STAGES = {
   pregnancy: "Embarazo",
+  newborn: "RN (recién nacido)",
   "0_3m": "0–3 meses",
   "3_6m": "3–6 meses",
   "6_12m": "6–12 meses",

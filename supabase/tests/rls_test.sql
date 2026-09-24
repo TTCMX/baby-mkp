@@ -108,6 +108,12 @@ select pg_temp.assert((select count(*) from public.listings where search_vector 
 
 select pg_temp.assert((select location_text from public.listings where id = '10000000-0000-0000-0000-000000000001') = 'ciudad de mexico ', 'location_text normalised');
 
+-- RN stage (newborn) is searchable
+reset role;
+update public.listings set age_stages = '{newborn,0_3m}' where id = '10000000-0000-0000-0000-000000000001';
+select pg_temp.assert((select count(*) from public.listings where search_vector @@ to_tsquery('public.es_unaccent', 'rn:*')) = 1, 'search RN');
+update public.listings set age_stages = '{0_3m,3_6m}' where id = '10000000-0000-0000-0000-000000000001';
+
 -- Bob buys ---------------------------------------------------------------------
 reset role;
 set local role authenticated;
