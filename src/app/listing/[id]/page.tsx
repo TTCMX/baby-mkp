@@ -52,6 +52,7 @@ function toViewData(l: ListingDetail): ListingViewData {
       height: i.height,
     })),
     seller: {
+      username: l.seller.username,
       displayName: l.seller.display_name,
       avatarUrl: l.seller.avatar_url,
       salesCount: l.seller.sales_count,
