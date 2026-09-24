@@ -18,6 +18,7 @@ export const ANALYTICS_EVENTS = [
   "concierge_requested",
   "concierge_accepted",
   "concierge_completed",
+  "baby_added",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];

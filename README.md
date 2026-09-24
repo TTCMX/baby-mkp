@@ -120,6 +120,10 @@ supabase/
   reactivar); pedidos (filtrar, resolver problemas a favor de comprador —reembolso— o vendedor —completar y pagar—,
   reembolsar revirtiendo la transferencia si ya se pagó); configuración (comisiones, umbral concierge, moderación,
   fotos, días de confirmación) y categorías. Toda acción queda en `admin_audit_log`.
+- [x] **Crece con tus bebés:** los padres registran a sus bebés (nombre + fecha de nacimiento o de parto; privado).
+  La app calcula su etapa con fechas de calendario (`src/features/babies/stages.ts`, con tests) y el inicio muestra:
+  selector de bebés, línea de tiempo de etapas, "Le queda chico" (vender lo de la etapa anterior con la edad
+  preseleccionada) y "Siguiente etapa", más productos de su etapa actual. Base del futuro Baby Closet.
 - [ ] 10. P1: favoritos, chat, wishlist, IA para listings, concierge
 
 Las rutas de etapas futuras (`/sell/new`, `/search`, `/listing/[id]`, …) existen como placeholders.
