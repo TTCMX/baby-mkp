@@ -8,14 +8,7 @@ import { CategoryIcon } from "@/features/catalog/category-icon";
 import { ListingCard } from "@/features/catalog/listing-card";
 import { FamilyHome, type BabyView } from "@/features/babies/family-home";
 import { getMyBabies, type Baby } from "@/features/babies/queries";
-import {
-  ageLabel,
-  currentStage,
-  headline,
-  outgrownStage,
-  timeline,
-  todayInMexico,
-} from "@/features/babies/stages";
+import { ageLabel, currentStage, headline, outgrownStage, timeline, todayInMexico } from "@/features/babies/stages";
 import {
   getListingsForStages,
   getLatestListings,
