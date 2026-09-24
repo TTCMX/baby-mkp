@@ -47,6 +47,12 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
         </Link>
       </div>
 
+      {user.profile.role === "admin" && (
+        <Link href="/admin" className={buttonVariants({ className: "w-full" })}>
+          Panel de administración
+        </Link>
+      )}
+
       {payoutStatus && <PayoutsCard status={payoutStatus} error={payouts === "error"} />}
 
       <Card className="p-5">

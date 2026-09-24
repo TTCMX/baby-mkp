@@ -17,7 +17,7 @@ npx supabase db reset             # aplica migraciones + seed
 npm run dev
 ```
 
-Para hacer admin a un usuario: `update profiles set role = 'admin' where username = '...';`
+Para hacer admin a un usuario: `update profiles set role = 'admin' where username = '...';` (luego entra a `/admin`).
 
 ## Despliegue de la base de datos
 
@@ -114,7 +114,12 @@ supabase/
   vendedor (Stripe transfer idempotente; queda pendiente y se paga solo cuando termina su alta de cobros).
   Reseñas en ambos sentidos, perfil público `/profile/[username]`, avisos en la app y contacto entre las partes
   tras el pago.
-- [ ] 9. Admin (listings, usuarios, órdenes, concierge, categorías, configuración)
+- [x] **9. Admin (`/admin`):** métricas (GMV, revenue, revenue neto, take rate, sell-through, días hasta venta,
+  ticket promedio) con alertas de pendientes; productos (buscar, filtrar, aprobar, rechazar, editar, desactivar,
+  reactivar, marcar vendido); usuarios (buscar por nombre/usuario/correo, suspender pausando sus productos,
+  reactivar); pedidos (filtrar, resolver problemas a favor de comprador —reembolso— o vendedor —completar y pagar—,
+  reembolsar revirtiendo la transferencia si ya se pagó); configuración (comisiones, umbral concierge, moderación,
+  fotos, días de confirmación) y categorías. Toda acción queda en `admin_audit_log`.
 - [ ] 10. P1: favoritos, chat, wishlist, IA para listings, concierge
 
 Las rutas de etapas futuras (`/sell/new`, `/search`, `/listing/[id]`, …) existen como placeholders.

@@ -56,6 +56,11 @@ export async function SiteHeader() {
         )}
 
         <nav className="hidden items-center gap-1 md:flex">
+          {user?.profile.role === "admin" && (
+            <Link href="/admin" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+              Admin
+            </Link>
+          )}
           <Link href="/sell/new" className={buttonVariants({ size: "sm" })}>
             <Plus /> Vender
           </Link>
