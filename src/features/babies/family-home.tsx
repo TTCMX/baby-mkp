@@ -17,12 +17,11 @@ export type BabyView = {
   currentStage: string;
   currentLabel: string;
   outgrown: { stage: string; label: string } | null;
-  next: { stage: string; label: string; days: number | null } | null;
 };
 
 /**
  * "Crece con tus bebés": switch between babies, see where each one is in its
- * stages, and act on it (sell what's outgrown, shop the next stage).
+ * stages, and act on it (sell what's outgrown).
  * Feeds are rendered on the server, one per baby id.
  */
 export function FamilyHome({
@@ -111,47 +110,23 @@ export function FamilyHome({
           </ol>
         </div>
 
-        <div className={cn("grid gap-4", baby.outgrown && baby.next && "md:grid-cols-2")}>
-          {baby.outgrown && (
-            <div className="flex flex-col gap-4 rounded-[22px] bg-sun-wash px-6 py-[22px] sm:flex-row sm:items-center sm:gap-[18px]">
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-[15px] font-extrabold text-[#7a5200]">
-                  Le queda chico · {baby.outgrown.label}
-                </span>
-                <span className="text-[15px] text-[#5b4a20]">
-                  Lo que {baby.name} usaba en {baby.outgrown.label} puede servirle a otra familia. Véndelo en un par de
-                  minutos.
-                </span>
-              </div>
-              <Link
-                href={`/sell/new?age=${baby.outgrown.stage}`}
-                className="flex h-11 shrink-0 items-center justify-center rounded-full bg-foreground px-5 font-extrabold text-white hover:bg-foreground/90"
-              >
-                Vender lo de {baby.outgrown.label}
-              </Link>
+        {baby.outgrown && (
+          <div className="flex flex-col gap-4 rounded-[22px] bg-sun-wash px-6 py-[22px] sm:flex-row sm:items-center sm:gap-[18px]">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-[15px] font-extrabold text-[#7a5200]">Le queda chico · {baby.outgrown.label}</span>
+              <span className="text-[15px] text-[#5b4a20]">
+                Lo que {baby.name} usaba en {baby.outgrown.label} puede servirle a otra familia. Véndelo en un par de
+                minutos.
+              </span>
             </div>
-          )}
-          {baby.next && (
-            <div className="flex flex-col gap-4 rounded-[22px] bg-sky-wash px-6 py-[22px] sm:flex-row sm:items-center sm:gap-[18px]">
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-[15px] font-extrabold text-secondary-foreground">
-                  Siguiente etapa · {baby.next.label}
-                </span>
-                <span className="text-[15px] text-[#3a4a66]">
-                  {baby.next.days !== null && baby.next.days <= 45
-                    ? `${baby.name} llega a ${baby.next.label} en ${baby.next.days} ${baby.next.days === 1 ? "día" : "días"}. Adelántate con buen precio.`
-                    : `Cuando llegue el momento, aquí encontrarás lo que ${baby.name} va a necesitar.`}
-                </span>
-              </div>
-              <Link
-                href={`/search?age=${baby.next.stage}`}
-                className="flex h-11 shrink-0 items-center justify-center rounded-full bg-primary px-5 font-extrabold text-primary-foreground hover:bg-primary/90"
-              >
-                Ver {baby.next.label}
-              </Link>
-            </div>
-          )}
-        </div>
+            <Link
+              href={`/sell/new?age=${baby.outgrown.stage}`}
+              className="flex h-11 shrink-0 items-center justify-center rounded-full bg-foreground px-5 font-extrabold text-white hover:bg-foreground/90"
+            >
+              Vender lo de {baby.outgrown.label}
+            </Link>
+          </div>
+        )}
       </section>
 
       <section aria-labelledby="baby-feed-heading" className="flex flex-col gap-4">

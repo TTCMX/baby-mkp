@@ -11,9 +11,7 @@ import { getMyBabies, type Baby } from "@/features/babies/queries";
 import {
   ageLabel,
   currentStage,
-  daysUntilNextStage,
   headline,
-  nextStage,
   outgrownStage,
   timeline,
   todayInMexico,
@@ -207,7 +205,6 @@ async function buildFamily(babies: Baby[]) {
   const views: BabyView[] = babies.map((b) => {
     const stage = currentStage(b, today);
     const out = outgrownStage(b, today);
-    const next = nextStage(b, today);
     return {
       id: b.id,
       name: b.name,
@@ -218,7 +215,6 @@ async function buildFamily(babies: Baby[]) {
       currentStage: stage,
       currentLabel: AGE_STAGES[stage],
       outgrown: out ? { stage: out, label: AGE_STAGES[out] } : null,
-      next: next ? { stage: next, label: AGE_STAGES[next], days: daysUntilNextStage(b, today) } : null,
     };
   });
   // Products for each baby's current stage (plus "all ages").
