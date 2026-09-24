@@ -27,7 +27,8 @@ describe("calendar helpers", () => {
 
 describe("stages", () => {
   it("maps age to the catalogue stage", () => {
-    expect(currentStage(born("2026-09-20"), TODAY)).toBe("0_3m");
+    expect(currentStage(born("2026-09-20"), TODAY)).toBe("newborn"); // 4 days → RN
+    expect(currentStage(born("2026-08-24"), TODAY)).toBe("0_3m"); // 1 month
     expect(currentStage(born("2026-05-01"), TODAY)).toBe("3_6m"); // ~4.8 months
     expect(currentStage(born("2026-02-24"), TODAY)).toBe("6_12m"); // 7 months
     expect(currentStage(born("2025-09-24"), TODAY)).toBe("1_2y"); // exactly 1 year
@@ -35,13 +36,13 @@ describe("stages", () => {
     expect(currentStage(born("2021-01-01"), TODAY)).toBe("4y_plus");
     expect(currentStage(due("2027-01-10"), TODAY)).toBe("pregnancy");
     // Due date already passed but birth not recorded yet: treat as newborn
-    expect(currentStage(due("2026-09-10"), TODAY)).toBe("0_3m");
+    expect(currentStage(due("2026-09-10"), TODAY)).toBe("newborn");
   });
 
   it("builds the timeline with progress on the current stage", () => {
     const t = timeline(born("2026-02-24"), TODAY); // 7 months → 6–12m
-    expect(t.map((s) => s.state)).toEqual(["done", "done", "done", "current", "next", "future", "future"]);
-    expect(t[3].progress).toBe(17); // 31 of 184 days (Aug 24 → Feb 24)
+    expect(t.map((s) => s.state)).toEqual(["done", "done", "done", "done", "current", "next", "future", "future"]);
+    expect(t[4].progress).toBe(17); // 31 of 184 days (Aug 24 → Feb 24)
     const p = timeline(due("2026-12-31"), TODAY); // 98 days left of 280
     expect(p[0]).toMatchObject({ stage: "pregnancy", state: "current", progress: 65 });
     expect(p[1].state).toBe("next");
@@ -52,7 +53,9 @@ describe("stages", () => {
 
   it("finds the outgrown and the next stage", () => {
     expect(outgrownStage(born("2026-02-24"), TODAY)).toBe("3_6m");
-    expect(outgrownStage(born("2026-09-01"), TODAY)).toBeNull(); // newborn
+    expect(outgrownStage(born("2026-09-01"), TODAY)).toBeNull(); // RN: nothing outgrown yet
+    expect(outgrownStage(born("2026-08-01"), TODAY)).toBe("newborn"); // in 0–3m: RN is outgrown
+    expect(nextStage(born("2026-09-20"), TODAY)).toBe("0_3m");
     expect(outgrownStage(due("2027-01-01"), TODAY)).toBeNull();
     expect(nextStage(born("2026-02-24"), TODAY)).toBe("1_2y");
     expect(nextStage(born("2020-01-01"), TODAY)).toBeNull();
@@ -79,6 +82,7 @@ describe("stages", () => {
     expect(headline("Mateo", born("2025-10-01"), TODAY)).toBe("Mateo pasa a 1–2 años esta semana");
     expect(headline("Mateo", born("2025-10-15"), TODAY)).toBe("Mateo pasa a 1–2 años en 3 semanas");
     expect(headline("Bebé", due("2026-11-01"), TODAY)).toBe("¡Ya casi llega Bebé! Prepárate para sus primeros meses");
+    expect(headline("Leo", born("2026-09-20"), TODAY)).toBe("Leo pasa a 0–3 meses en 4 semanas");
   });
 
   it("uses Mexico City's calendar day", () => {

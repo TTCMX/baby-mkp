@@ -46,14 +46,14 @@ Requiere los secrets de GitHub `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_ID` y 
 
 ## Scripts
 
-| Script | Qué hace |
-| --- | --- |
-| `npm run dev` / `build` / `start` | Next.js |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | Genera los tipos de rutas y corre `tsc` |
-| `npm test` | Tests unitarios (Vitest) |
-| `npm run db:test` | Aplica migraciones + seed + tests de RLS en un PostgreSQL local desechable (sin Docker) |
-| `npm run db:types` | Genera tipos TS desde Supabase local |
+| Script                            | Qué hace                                                                                |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
+| `npm run dev` / `build` / `start` | Next.js                                                                                 |
+| `npm run lint`                    | ESLint                                                                                  |
+| `npm run typecheck`               | Genera los tipos de rutas y corre `tsc`                                                 |
+| `npm test`                        | Tests unitarios (Vitest)                                                                |
+| `npm run db:test`                 | Aplica migraciones + seed + tests de RLS en un PostgreSQL local desechable (sin Docker) |
+| `npm run db:types`                | Genera tipos TS desde Supabase local                                                    |
 
 ## Estructura
 
@@ -78,11 +78,11 @@ supabase/
 
 - **Dinero en centavos (enteros).** Comisiones en `platform_settings`, nunca hardcodeadas
   (`platform_commission_percentage`, `concierge_commission_percentage`, `concierge_min_price_cents`).
-  Las órdenes guardan un *snapshot* del desglose: precio, envío, comisión, fees de pago, neto vendedor, neto plataforma.
+  Las órdenes guardan un _snapshot_ del desglose: precio, envío, comisión, fees de pago, neto vendedor, neto plataforma.
   El cálculo vive en `src/lib/pricing.ts` (con tests).
 - **Público vs privado por tabla.** `profiles` es público; email, teléfono, Stripe y direcciones viven en
   `private_profiles` / `addresses`, visibles solo para el dueño (y admin).
-- **Seguridad en la base de datos, no en el frontend.** RLS en todas las tablas + *grants por columna*:
+- **Seguridad en la base de datos, no en el frontend.** RLS en todas las tablas + _grants por columna_:
   un usuario no puede cambiar `status`, `role`, contadores ni ids de Stripe aunque llame a la API directamente.
   Publicar pasa por la RPC `publish_listing` (valida fotos, etapa, envío permitido y moderación).
   Órdenes, pagos y payouts solo los escribe el servidor (service role) desde checkout y webhooks de Stripe.
@@ -98,32 +98,32 @@ supabase/
 - [x] **2–3. Esquema de DB + migraciones** (todas las tablas del modelo inicial, RLS, storage, seed)
 - [x] **4. Autenticación** (registro, login, callback de email, logout, rutas protegidas, perfil/ajustes, cuentas suspendidas)
 - [x] **5. Listings:** flujo "Vender" en 5 pasos (fotos → detalles → descripción → entrega → vista previa), borradores,
-  edición, pausar/publicar/borrar, "Mis productos" y página de producto `/listing/[id]`.
-  Las fotos se redimensionan en el navegador (≤1600 px + miniatura ≤600 px, WebP/JPEG) y se suben directo a Storage.
+      edición, pausar/publicar/borrar, "Mis productos" y página de producto `/listing/[id]`.
+      Las fotos se redimensionan en el navegador (≤1600 px + miniatura ≤600 px, WebP/JPEG) y se suben directo a Storage.
 - [x] **6. Catálogo:** búsqueda de texto (PostgreSQL FTS en español, sin acentos, palabras parciales, también por edad
-  y condición), filtros combinables en la URL (categoría, precio, marca, condición, edad, ubicación con alias como
-  "CDMX", entrega), orden, paginación, `/category/[slug]` y home con Nuevos / Cerca de ti / Populares / Compra por etapa.
+      y condición), filtros combinables en la URL (categoría, precio, marca, condición, edad, ubicación con alias como
+      "CDMX", entrega), orden, paginación, `/category/[slug]` y home con Nuevos / Cerca de ti / Populares / Compra por etapa.
 - [x] **7. Checkout con Stripe Connect:** el comprador elige entrega (+ dirección), paga en Stripe Checkout;
-  el producto queda reservado mientras paga y vendido al confirmarse el pago (webhook firmado e idempotente).
-  Modelo *separate charges and transfers*: la plataforma cobra y retiene; la transferencia al vendedor se hace al
-  completar la orden (etapa 8). Vendedores configuran cobros con onboarding de Stripe (cuenta Express, MX).
-  Reembolso automático si un pago llega después de liberar la reserva. `/orders` y `/orders/[id]` básicos.
+      el producto queda reservado mientras paga y vendido al confirmarse el pago (webhook firmado e idempotente).
+      Modelo _separate charges and transfers_: la plataforma cobra y retiene; la transferencia al vendedor se hace al
+      completar la orden (etapa 8). Vendedores configuran cobros con onboarding de Stripe (cuenta Express, MX).
+      Reembolso automático si un pago llega después de liberar la reserva. `/orders` y `/orders/[id]` básicos.
 - [x] **8. Órdenes:** el vendedor marca enviado (con guía) o entregado; el comprador confirma o reporta un problema
-  (congela la orden y el pago). Si no hay respuesta en `order_auto_complete_days` (3) días tras "entregado", se
-  completa sola (al abrir la orden y con el job diario `/api/cron/orders`). Al completar se transfiere el neto al
-  vendedor (Stripe transfer idempotente; queda pendiente y se paga solo cuando termina su alta de cobros).
-  Reseñas en ambos sentidos, perfil público `/profile/[username]`, avisos en la app y contacto entre las partes
-  tras el pago.
+      (congela la orden y el pago). Si no hay respuesta en `order_auto_complete_days` (3) días tras "entregado", se
+      completa sola (al abrir la orden y con el job diario `/api/cron/orders`). Al completar se transfiere el neto al
+      vendedor (Stripe transfer idempotente; queda pendiente y se paga solo cuando termina su alta de cobros).
+      Reseñas en ambos sentidos, perfil público `/profile/[username]`, avisos en la app y contacto entre las partes
+      tras el pago.
 - [x] **9. Admin (`/admin`):** métricas (GMV, revenue, revenue neto, take rate, sell-through, días hasta venta,
-  ticket promedio) con alertas de pendientes; productos (buscar, filtrar, aprobar, rechazar, editar, desactivar,
-  reactivar, marcar vendido); usuarios (buscar por nombre/usuario/correo, suspender pausando sus productos,
-  reactivar); pedidos (filtrar, resolver problemas a favor de comprador —reembolso— o vendedor —completar y pagar—,
-  reembolsar revirtiendo la transferencia si ya se pagó); configuración (comisiones, umbral concierge, moderación,
-  fotos, días de confirmación) y categorías. Toda acción queda en `admin_audit_log`.
+      ticket promedio) con alertas de pendientes; productos (buscar, filtrar, aprobar, rechazar, editar, desactivar,
+      reactivar, marcar vendido); usuarios (buscar por nombre/usuario/correo, suspender pausando sus productos,
+      reactivar); pedidos (filtrar, resolver problemas a favor de comprador —reembolso— o vendedor —completar y pagar—,
+      reembolsar revirtiendo la transferencia si ya se pagó); configuración (comisiones, umbral concierge, moderación,
+      fotos, días de confirmación) y categorías. Toda acción queda en `admin_audit_log`.
 - [x] **Crece con tus bebés:** los padres registran a sus bebés (nombre + fecha de nacimiento o de parto; privado).
-  La app calcula su etapa con fechas de calendario (`src/features/babies/stages.ts`, con tests) y el inicio muestra:
-  selector de bebés, línea de tiempo de etapas, "Le queda chico" (vender lo de la etapa anterior con la edad
-  preseleccionada) y "Siguiente etapa", más productos de su etapa actual. Base del futuro Baby Closet.
+      La app calcula su etapa (Embarazo, RN = primer mes, 0–3 meses, …) con fechas de calendario (`src/features/babies/stages.ts`, con tests) y el inicio muestra:
+      selector de bebés, línea de tiempo de etapas, "Le queda chico" (vender lo de la etapa anterior con la edad
+      preseleccionada) y "Siguiente etapa", más productos de su etapa actual. Base del futuro Baby Closet.
 - [ ] 10. P1: favoritos, chat, wishlist, IA para listings, concierge
 
 Las rutas de etapas futuras (`/sell/new`, `/search`, `/listing/[id]`, …) existen como placeholders.

@@ -9,7 +9,8 @@ export type BabyDates = { birth_date: string | null; due_date: string | null };
 /** Life stages in order, with their range in months since birth. */
 export const STAGE_ORDER: { stage: AgeStage; from: number; to: number | null }[] = [
   { stage: "pregnancy", from: -9, to: 0 },
-  { stage: "0_3m", from: 0, to: 3 },
+  { stage: "newborn", from: 0, to: 1 },
+  { stage: "0_3m", from: 1, to: 3 },
   { stage: "3_6m", from: 3, to: 6 },
   { stage: "6_12m", from: 6, to: 12 },
   { stage: "1_2y", from: 12, to: 24 },
