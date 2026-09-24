@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SITE_NAME } from "@/lib/site";
+import { HeaderNav } from "./header-nav";
 
 export async function SiteHeader() {
   const user = await getCurrentUser();
@@ -20,23 +21,25 @@ export async function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
-        <Link href="/" className="shrink-0 text-lg font-extrabold leading-tight tracking-tight text-primary">
-          <span className="hidden sm:inline">{SITE_NAME}</span>
-          <span className="sm:hidden" aria-label={SITE_NAME}>
-            BR
-          </span>
+    <header className="sticky top-0 z-40 border-b bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 md:h-[76px] md:gap-6">
+        <Link href="/" aria-label={SITE_NAME} className="shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element -- static brand art, sized in CSS */}
+          <img src="/brand/wordmark.png" alt="" width={219} height={36} className="hidden h-9 w-[219px] sm:block" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- static brand art, sized in CSS */}
+          <img src="/brand/mascot.png" alt="" width={44} height={40} className="h-10 w-11 sm:hidden" />
         </Link>
 
+        <HeaderNav />
+
         <form action="/search" className="relative flex-1" role="search">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 md:left-4 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             name="q"
             type="search"
-            placeholder="Busca carriolas, ropa, marcas…"
+            placeholder="Busca ropa, tallas, marcas…"
             aria-label="Buscar productos"
-            className="h-10 w-full rounded-full border border-input bg-card pl-10 pr-4 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30 md:text-sm"
+            className="h-10 w-full rounded-full border border-transparent bg-muted pl-10 pr-4 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30 md:h-11 md:pl-11 md:text-[15px]"
           />
         </form>
 
@@ -61,7 +64,13 @@ export async function SiteHeader() {
               Admin
             </Link>
           )}
-          <Link href="/sell/new" className={buttonVariants({ size: "sm" })}>
+          <Link
+            href="/sell/new"
+            className={cn(
+              buttonVariants(),
+              "h-11 bg-pink px-[22px] text-[15px] font-extrabold text-foreground hover:bg-pink/90",
+            )}
+          >
             <Plus /> Vender
           </Link>
           <Link

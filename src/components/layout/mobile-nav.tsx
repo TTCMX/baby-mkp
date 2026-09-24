@@ -32,7 +32,7 @@ export function MobileNav() {
                 )}
               >
                 {primary ? (
-                  <span className="-mt-1 flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                  <span className="-mt-1 flex size-9 items-center justify-center rounded-full bg-pink text-foreground shadow">
                     <Icon className="size-5" />
                   </span>
                 ) : (
