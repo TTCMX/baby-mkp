@@ -33,6 +33,13 @@ Requiere los secrets de GitHub `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_ID` y 
 - En Vercel: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
   `SUPABASE_SECRET_KEY` (esta última solo en el servidor).
 
+## Stripe
+
+- Endpoint del webhook: `https://<dominio>/api/stripe/webhook`, eventos `checkout.session.completed`,
+  `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`.
+- La comisión sale de `platform_settings` (`platform_commission_percentage`, o `concierge_commission_percentage`
+  para ventas concierge) y se guarda como snapshot en la orden junto con la tarifa de Stripe y los netos.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -92,7 +99,11 @@ supabase/
 - [x] **6. Catálogo:** búsqueda de texto (PostgreSQL FTS en español, sin acentos, palabras parciales, también por edad
   y condición), filtros combinables en la URL (categoría, precio, marca, condición, edad, ubicación con alias como
   "CDMX", entrega), orden, paginación, `/category/[slug]` y home con Nuevos / Cerca de ti / Populares / Compra por etapa.
-- [ ] 7. Checkout con Stripe Connect (onboarding de vendedor, pago, webhooks)
+- [x] **7. Checkout con Stripe Connect:** el comprador elige entrega (+ dirección), paga en Stripe Checkout;
+  el producto queda reservado mientras paga y vendido al confirmarse el pago (webhook firmado e idempotente).
+  Modelo *separate charges and transfers*: la plataforma cobra y retiene; la transferencia al vendedor se hace al
+  completar la orden (etapa 8). Vendedores configuran cobros con onboarding de Stripe (cuenta Express, MX).
+  Reembolso automático si un pago llega después de liberar la reserva. `/orders` y `/orders/[id]` básicos.
 - [ ] 8. Órdenes (entrega, completar, payout, reviews)
 - [ ] 9. Admin (listings, usuarios, órdenes, concierge, categorías, configuración)
 - [ ] 10. P1: favoritos, chat, wishlist, IA para listings, concierge

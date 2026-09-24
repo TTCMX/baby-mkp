@@ -106,25 +106,28 @@ export default async function ListingPage({ params, searchParams }: PageProps<"/
         </div>
       )}
 
-      <ListingView data={toViewData(listing)} actions={isOwner ? null : <BuyerActions status={listing.status} />} />
+      <ListingView
+        data={toViewData(listing)}
+        actions={isOwner ? null : <BuyerActions listingId={listing.id} status={listing.status} />}
+      />
     </div>
   );
 }
 
-function BuyerActions({ status }: { status: ListingDetail["status"] }) {
+function BuyerActions({ listingId, status }: { listingId: string; status: ListingDetail["status"] }) {
   if (status === "sold" || status === "reserved") {
     return (
       <p className="rounded-2xl bg-muted p-4 text-center text-sm font-bold">
-        {status === "sold" ? "Este producto ya se vendió" : "Este producto está reservado"}
+        {status === "sold" ? "Este producto ya se vendió" : "Alguien lo está comprando en este momento"}
       </p>
     );
   }
-  // Checkout, favorites and chat arrive in the next stages.
+  // Favorites and chat arrive in the next stages.
   return (
     <div className="space-y-2">
-      <Button size="lg" className="w-full" disabled>
+      <Link href={`/checkout/${listingId}`} className={buttonVariants({ size: "lg", className: "w-full" })}>
         <ShoppingBag /> Comprar
-      </Button>
+      </Link>
       <div className="grid grid-cols-2 gap-2">
         <Button variant="outline" disabled>
           <MessageCircle /> Contactar
@@ -134,7 +137,7 @@ function BuyerActions({ status }: { status: ListingDetail["status"] }) {
         </Button>
       </div>
       <p className="text-center text-xs text-muted-foreground">
-        Muy pronto podrás comprar y escribir al vendedor aquí.
+        Pago protegido: el vendedor recibe tu dinero cuando confirmas que recibiste el producto.
       </p>
     </div>
   );

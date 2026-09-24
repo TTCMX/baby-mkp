@@ -94,7 +94,7 @@ export function ListingView({ data, actions }: { data: ListingViewData; actions?
                   <li key={m}>
                     {DELIVERY_METHODS[m]}
                     {m === "shipping" &&
-                      (data.shippingPriceCents ? ` · ${formatPrice(data.shippingPriceCents)}` : " · por acordar")}
+                      (data.shippingPriceCents ? ` · ${formatPrice(data.shippingPriceCents)}` : " · incluido")}
                   </li>
                 ))}
               </ul>
