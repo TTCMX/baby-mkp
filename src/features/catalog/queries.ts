@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { AgeStage } from "@/lib/domain/constants";
 import type { Category, Listing } from "@/lib/domain/types";
 import { normalizeLocation, toTsQuery, type CatalogFilters } from "./filters";
 
@@ -67,6 +68,16 @@ export async function getPopularListings(limit = 8): Promise<ListingCardData[]> 
 export async function getListingsNear(city: string, limit = 8): Promise<ListingCardData[]> {
   const { data, error } = await cardQuery(await createClient())
     .ilike("location_text", `${normalizeLocation(city)}%`)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as ListingCardData[];
+}
+
+/** Newest active listings for any of the given age stages. */
+export async function getListingsForStages(stages: AgeStage[], limit = 5): Promise<ListingCardData[]> {
+  const { data, error } = await cardQuery(await createClient())
+    .overlaps("age_stages", stages)
     .order("published_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
