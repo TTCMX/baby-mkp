@@ -532,7 +532,7 @@ export function SellWizard(props: Props) {
                     inputMode="decimal"
                     className="pl-8"
                     value={fields.shippingPrice}
-                    placeholder="Déjalo vacío si lo acuerdas con el comprador"
+                    placeholder="Déjalo vacío si el envío va incluido en el precio"
                     onChange={(e) => set("shippingPrice", e.target.value)}
                   />
                 </div>
