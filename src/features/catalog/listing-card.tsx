@@ -10,8 +10,11 @@ export function ListingCard({ listing }: { listing: ListingCardData }) {
   const cover = listing.listing_images[0];
 
   return (
-    <Link href={`/listing/${listing.id}`} className="group block">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted">
+    <Link
+      href={`/listing/${listing.id}`}
+      className="group flex h-full flex-col gap-2.5 rounded-[22px] border-[1.5px] bg-card p-2 pb-3.5 transition-colors hover:border-sky-soft"
+    >
+      <div className="relative aspect-square overflow-hidden rounded-2xl bg-sky-wash">
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element -- photos are pre-resized thumbnails
           <img
@@ -31,12 +34,15 @@ export function ListingCard({ listing }: { listing: ListingCardData }) {
           </span>
         )}
       </div>
-      <div className="mt-2 space-y-0.5 px-0.5">
-        <p className="text-base font-extrabold">{formatPrice(listing.price_cents, listing.currency)}</p>
-        <p className="line-clamp-1 text-sm">{listing.title}</p>
-        <p className="line-clamp-1 text-xs text-muted-foreground">
-          {LISTING_CONDITIONS[listing.condition].label} · {listing.municipality ?? listing.city}
-        </p>
+      <div className="flex flex-col gap-0.5 px-1.5">
+        <p className="truncate text-sm">{listing.title}</p>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-[17px] font-extrabold">{formatPrice(listing.price_cents, listing.currency)}</p>
+          <p className="truncate text-xs font-bold text-muted-foreground">
+            {LISTING_CONDITIONS[listing.condition].label}
+          </p>
+        </div>
+        <p className="truncate text-xs text-muted-foreground">{listing.municipality ?? listing.city}</p>
       </div>
     </Link>
   );
