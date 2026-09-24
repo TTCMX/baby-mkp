@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/features/profile/profile-form";
 import { signOut } from "@/features/auth/actions";
 import Link from "next/link";
-import { Package, ShoppingBag } from "lucide-react";
+import { Baby, Package, ShoppingBag } from "lucide-react";
 import { isStripeConfigured } from "@/lib/stripe";
 import { PayoutsCard } from "@/features/payments/payouts-card";
 import { syncPayoutStatus, type PayoutStatus } from "@/features/payments/payout-account";
@@ -37,6 +37,10 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
         <h1 className="text-2xl font-extrabold">Mi cuenta</h1>
         <p className="text-sm text-muted-foreground">{user.email}</p>
       </div>
+
+      <Link href="/babies" className={buttonVariants({ variant: "outline", className: "w-full justify-start" })}>
+        <Baby /> Mis bebés
+      </Link>
 
       <div className="grid grid-cols-2 gap-2">
         <Link href="/orders" className={buttonVariants({ variant: "outline", className: "justify-start" })}>

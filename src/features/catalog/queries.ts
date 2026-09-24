@@ -54,6 +54,16 @@ export async function getLatestListings(limit = 12): Promise<ListingCardData[]> 
   return (data ?? []) as ListingCardData[];
 }
 
+/** Active listings for any of the given age stages, newest first ("Crece con tus bebés" feeds). */
+export async function getListingsForStages(stages: string[], limit = 10): Promise<ListingCardData[]> {
+  const { data, error } = await cardQuery(await createClient())
+    .overlaps("age_stages", stages)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as ListingCardData[];
+}
+
 export async function getPopularListings(limit = 8): Promise<ListingCardData[]> {
   const { data, error } = await cardQuery(await createClient())
     .gt("favorite_count", 0)
