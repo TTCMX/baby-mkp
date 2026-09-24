@@ -1,11 +1,27 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
+import { AGE_STAGES, keysOf } from "@/lib/domain/constants";
 import { CategoryIcon } from "@/features/catalog/category-icon";
 import { ListingCard } from "@/features/catalog/listing-card";
-import { getLatestListings, getTopLevelCategories } from "@/features/catalog/queries";
+import {
+  getLatestListings,
+  getListingsNear,
+  getPopularListings,
+  getTopLevelCategories,
+  type ListingCardData,
+} from "@/features/catalog/queries";
 import { buttonVariants } from "@/components/ui/button";
 
 export default async function HomePage() {
-  const [categories, latest] = await Promise.all([getTopLevelCategories(), getLatestListings(12)]);
+  const user = await getCurrentUser();
+  const city = user?.profile.city ?? null;
+  const [categories, latest, popular, near] = await Promise.all([
+    getTopLevelCategories(),
+    getLatestListings(12),
+    getPopularListings(8),
+    city ? getListingsNear(city, 8) : Promise.resolve([]),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -16,9 +32,14 @@ export default async function HomePage() {
         <p className="mt-2 max-w-md text-sm text-secondary-foreground/80 md:text-base">
           Compra de segunda mano con confianza. Vende en un par de minutos.
         </p>
-        <Link href="/sell/new" className={buttonVariants({ className: "mt-4" })}>
-          Vender algo
-        </Link>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href="/sell/new" className={buttonVariants()}>
+            Vender algo
+          </Link>
+          <Link href="/search" className={buttonVariants({ variant: "outline" })}>
+            Explorar
+          </Link>
+        </div>
       </section>
 
       <section aria-labelledby="categories-heading">
@@ -42,27 +63,66 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      <section aria-labelledby="latest-heading">
-        <h2 id="latest-heading" className="mb-3 text-lg font-extrabold">
-          Nuevos
+      <section aria-labelledby="stages-heading">
+        <h2 id="stages-heading" className="mb-3 text-lg font-extrabold">
+          Compra por etapa
         </h2>
-        {latest.length === 0 ? (
-          <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            Aún no hay productos publicados.{" "}
-            <Link href="/sell/new" className="font-semibold text-primary">
-              ¡Sé la primera persona en vender!
-            </Link>
-          </div>
-        ) : (
-          <ul className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4">
-            {latest.map((listing) => (
-              <li key={listing.id}>
-                <ListingCard listing={listing} />
+        <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
+          {keysOf(AGE_STAGES)
+            .filter((a) => a !== "all_ages")
+            .map((a) => (
+              <li key={a} className="shrink-0">
+                <Link
+                  href={`/search?age=${a}`}
+                  className="inline-block rounded-full border bg-card px-4 py-2 text-sm font-semibold hover:bg-muted"
+                >
+                  {AGE_STAGES[a]}
+                </Link>
               </li>
             ))}
-          </ul>
-        )}
+        </ul>
       </section>
+
+      {latest.length === 0 ? (
+        <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+          Aún no hay productos publicados.{" "}
+          <Link href="/sell/new" className="font-semibold text-primary">
+            ¡Sé la primera persona en vender!
+          </Link>
+        </div>
+      ) : (
+        <>
+          <ListingSection title="Nuevos" href="/search" listings={latest} />
+          {near.length > 0 && city && (
+            <ListingSection
+              title={`Cerca de ti · ${city}`}
+              href={`/search?city=${encodeURIComponent(city)}`}
+              listings={near}
+            />
+          )}
+          {popular.length > 0 && <ListingSection title="Populares" href="/search?sort=popular" listings={popular} />}
+        </>
+      )}
     </div>
+  );
+}
+
+function ListingSection({ title, href, listings }: { title: string; href: string; listings: ListingCardData[] }) {
+  return (
+    <section>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-lg font-extrabold">{title}</h2>
+        <Link href={href} className="inline-flex items-center text-sm font-semibold text-primary">
+          Ver todo <ChevronRight className="size-4" />
+        </Link>
+      </div>
+      <ul className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4">
+        {listings.map((listing) => (
+          <li key={listing.id}>
+            <ListingCard listing={listing} />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
