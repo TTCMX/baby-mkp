@@ -89,7 +89,9 @@ supabase/
 - [x] **5. Listings:** flujo "Vender" en 5 pasos (fotos → detalles → descripción → entrega → vista previa), borradores,
   edición, pausar/publicar/borrar, "Mis productos" y página de producto `/listing/[id]`.
   Las fotos se redimensionan en el navegador (≤1600 px + miniatura ≤600 px, WebP/JPEG) y se suben directo a Storage.
-- [ ] 6. Catálogo: home con secciones, búsqueda, filtros, categoría, detalle de producto
+- [x] **6. Catálogo:** búsqueda de texto (PostgreSQL FTS en español, sin acentos, palabras parciales, también por edad
+  y condición), filtros combinables en la URL (categoría, precio, marca, condición, edad, ubicación con alias como
+  "CDMX", entrega), orden, paginación, `/category/[slug]` y home con Nuevos / Cerca de ti / Populares / Compra por etapa.
 - [ ] 7. Checkout con Stripe Connect (onboarding de vendedor, pago, webhooks)
 - [ ] 8. Órdenes (entrega, completar, payout, reviews)
 - [ ] 9. Admin (listings, usuarios, órdenes, concierge, categorías, configuración)

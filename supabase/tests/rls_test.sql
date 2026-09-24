@@ -100,6 +100,14 @@ select pg_temp.assert((select count(*) from public.listings where search_vector 
 select pg_temp.assert((select count(*) from public.listings where search_vector @@ websearch_to_tsquery('public.es_unaccent', 'carriolas')) = 1, 'search plural');
 select pg_temp.assert((select count(*) from public.listings where search_vector @@ websearch_to_tsquery('public.es_unaccent', 'rayon')) = 1, 'search without accent');
 
+-- Search covers age stage and condition labels, with prefix matching
+select pg_temp.assert((select count(*) from public.listings where search_vector @@ to_tsquery('public.es_unaccent', 'carriola:* & 3:* & mes:*')) = 1, 'search by age stage');
+select pg_temp.assert((select count(*) from public.listings where search_vector @@ to_tsquery('public.es_unaccent', 'excelent:*')) = 1, 'search by condition');
+select pg_temp.assert((select count(*) from public.listings where search_vector @@ to_tsquery('public.es_unaccent', 'carri:*')) = 1, 'prefix search');
+select pg_temp.assert((select count(*) from public.listings where search_vector @@ to_tsquery('public.es_unaccent', 'embarazo:*')) = 0, 'no false positives');
+
+select pg_temp.assert((select location_text from public.listings where id = '10000000-0000-0000-0000-000000000001') = 'ciudad de mexico ', 'location_text normalised');
+
 -- Bob buys ---------------------------------------------------------------------
 reset role;
 set local role authenticated;
