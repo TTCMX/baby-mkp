@@ -18,7 +18,13 @@ export type OrderRow = {
   platform_commission_cents: number;
   seller_net_cents: number;
   paid_at: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
   completed_at: string | null;
+  tracking_carrier: string | null;
+  tracking_number: string | null;
+  disputed_at: string | null;
+  dispute_reason: string | null;
   cancelled_at: string | null;
   created_at: string;
   order_items: { title: string; price_cents: number }[];
@@ -57,4 +63,28 @@ export async function getOrder(id: string): Promise<(OrderRow & { buyer_name: st
 
 export function coverOf(order: OrderRow) {
   return [...(order.listing?.listing_images ?? [])].sort((a, b) => a.position - b.position)[0]?.storage_path ?? null;
+}
+
+export type OrderExtras = {
+  contact: { display_name: string; email: string | null; phone: string | null } | null;
+  reviews: { reviewer_id: string; rating: number; comment: string | null }[];
+  payout: { status: string; amount_cents: number; released_at: string | null } | null;
+};
+
+/** Counterpart contact (after payment), reviews of this order, and the seller payout. */
+export async function getOrderExtras(order: OrderRow, userId: string): Promise<OrderExtras> {
+  const supabase = await createClient();
+  const [contact, reviews, payout] = await Promise.all([
+    supabase.rpc("order_contact", { p_order_id: order.id }).maybeSingle<NonNullable<OrderExtras["contact"]>>(),
+    supabase.from("reviews").select("reviewer_id, rating, comment").eq("order_id", order.id),
+    order.seller_id === userId
+      ? supabase
+          .from("payouts")
+          .select("status, amount_cents, released_at")
+          .eq("order_id", order.id)
+          .neq("status", "cancelled")
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+  return { contact: contact.data ?? null, reviews: reviews.data ?? [], payout: payout.data ?? null };
 }

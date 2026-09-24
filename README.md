@@ -40,6 +40,10 @@ Requiere los secrets de GitHub `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_ID` y 
 - La comisión sale de `platform_settings` (`platform_commission_percentage`, o `concierge_commission_percentage`
   para ventas concierge) y se guarda como snapshot en la orden junto con la tarifa de Stripe y los netos.
 
+## Tareas programadas
+
+`vercel.json` programa `/api/cron/orders` una vez al día (plan Hobby). Requiere la variable `CRON_SECRET` en Vercel.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -104,7 +108,12 @@ supabase/
   Modelo *separate charges and transfers*: la plataforma cobra y retiene; la transferencia al vendedor se hace al
   completar la orden (etapa 8). Vendedores configuran cobros con onboarding de Stripe (cuenta Express, MX).
   Reembolso automático si un pago llega después de liberar la reserva. `/orders` y `/orders/[id]` básicos.
-- [ ] 8. Órdenes (entrega, completar, payout, reviews)
+- [x] **8. Órdenes:** el vendedor marca enviado (con guía) o entregado; el comprador confirma o reporta un problema
+  (congela la orden y el pago). Si no hay respuesta en `order_auto_complete_days` (3) días tras "entregado", se
+  completa sola (al abrir la orden y con el job diario `/api/cron/orders`). Al completar se transfiere el neto al
+  vendedor (Stripe transfer idempotente; queda pendiente y se paga solo cuando termina su alta de cobros).
+  Reseñas en ambos sentidos, perfil público `/profile/[username]`, avisos en la app y contacto entre las partes
+  tras el pago.
 - [ ] 9. Admin (listings, usuarios, órdenes, concierge, categorías, configuración)
 - [ ] 10. P1: favoritos, chat, wishlist, IA para listings, concierge
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Heart, Plus, Search, UserRound } from "lucide-react";
+import { Bell, Heart, Plus, Search, UserRound } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -7,6 +8,16 @@ import { SITE_NAME } from "@/lib/site";
 
 export async function SiteHeader() {
   const user = await getCurrentUser();
+  let unread = 0;
+  if (user) {
+    const supabase = await createClient();
+    const { count } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("read_at", null);
+    unread = count ?? 0;
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
@@ -28,6 +39,21 @@ export async function SiteHeader() {
             className="h-10 w-full rounded-full border border-input bg-card pl-10 pr-4 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30 md:text-sm"
           />
         </form>
+
+        {user && (
+          <Link
+            href="/notifications"
+            aria-label={unread ? `Avisos (${unread} nuevos)` : "Avisos"}
+            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "relative shrink-0")}
+          >
+            <Bell />
+            {unread > 0 && (
+              <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </Link>
+        )}
 
         <nav className="hidden items-center gap-1 md:flex">
           <Link href="/sell/new" className={buttonVariants({ size: "sm" })}>

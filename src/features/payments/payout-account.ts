@@ -2,6 +2,7 @@ import "server-only";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { processSellerPendingPayouts } from "./payouts";
 
 export type PayoutStatus = "none" | "pending" | "active";
 
@@ -30,6 +31,8 @@ export async function syncPayoutStatus(userId: string): Promise<PayoutStatus> {
   const ready = payoutsReady(account);
   if (ready) {
     await createAdminClient().from("private_profiles").update({ payouts_enabled: true }).eq("id", userId);
+    // Money from sales completed before the seller finished setup.
+    await processSellerPendingPayouts(userId);
   }
   return ready ? "active" : "pending";
 }

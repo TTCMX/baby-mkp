@@ -9,6 +9,7 @@ const settingsSchema = z.object({
   listings_require_review: z.boolean(),
   max_images_per_listing: z.number().int().min(1).max(20),
   default_currency: z.string().length(3),
+  order_auto_complete_days: z.number().int().min(1).max(60).default(3),
 });
 
 export type PlatformSettings = z.infer<typeof settingsSchema>;

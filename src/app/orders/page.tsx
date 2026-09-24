@@ -71,6 +71,11 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
                     <span className={cn("inline-block rounded-full px-2 py-0.5 text-[11px] font-bold", status.tone)}>
                       {status.label}
                     </span>
+                    {o.disputed_at && o.status !== "completed" && (
+                      <span className="ml-1.5 inline-block rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-bold text-destructive">
+                        Problema reportado
+                      </span>
+                    )}
                   </div>
                 </Link>
               </li>

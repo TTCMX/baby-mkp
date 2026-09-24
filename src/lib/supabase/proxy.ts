@@ -2,7 +2,17 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /** Routes that require a signed-in user. Everything else is public. */
-const PROTECTED_PREFIXES = ["/sell", "/favorites", "/wishlist", "/orders", "/messages", "/settings", "/admin"];
+const PROTECTED_PREFIXES = [
+  "/sell",
+  "/favorites",
+  "/wishlist",
+  "/orders",
+  "/messages",
+  "/settings",
+  "/admin",
+  "/notifications",
+  "/checkout",
+];
 
 export function isProtectedPath(pathname: string) {
   return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));

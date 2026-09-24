@@ -28,6 +28,7 @@ export type ListingViewData = {
   shippingPriceCents: number | null;
   images: GalleryImage[];
   seller: {
+    username?: string;
     displayName: string;
     avatarUrl: string | null;
     salesCount: number;
@@ -119,7 +120,15 @@ export function ListingView({ data, actions }: { data: ListingViewData; actions?
             </span>
           )}
           <div className="min-w-0 text-sm">
-            <p className="truncate font-extrabold">{data.seller.displayName}</p>
+            <p className="truncate font-extrabold">
+              {data.seller.username ? (
+                <a href={`/profile/${data.seller.username}`} className="hover:underline">
+                  {data.seller.displayName}
+                </a>
+              ) : (
+                data.seller.displayName
+              )}
+            </p>
             <p className="flex flex-wrap items-center gap-x-2 text-muted-foreground">
               {data.seller.ratingCount > 0 ? (
                 <span className="inline-flex items-center gap-0.5">
