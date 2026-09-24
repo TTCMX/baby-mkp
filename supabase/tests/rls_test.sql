@@ -64,6 +64,17 @@ values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000
 select pg_temp.assert(public.publish_listing('10000000-0000-0000-0000-000000000001') = 'active', 'publish -> active');
 select pg_temp.assert((select published_at is not null from public.listings where id = '10000000-0000-0000-0000-000000000001'), 'published_at set');
 
+-- Atomic photo replacement: reorder + change main photo
+select public.replace_listing_images('10000000-0000-0000-0000-000000000001', '[
+  {"storage_path":"00000000-0000-0000-0000-00000000000a/10000000-0000-0000-0000-000000000001/b.webp","width":1200,"height":1600},
+  {"storage_path":"00000000-0000-0000-0000-00000000000a/10000000-0000-0000-0000-000000000001/a.webp","width":1600,"height":1200}
+]'::jsonb);
+select pg_temp.assert((select storage_path from public.listing_images where listing_id = '10000000-0000-0000-0000-000000000001' and position = 0) like '%/b.webp', 'main photo replaced');
+select pg_temp.assert((select count(*) from public.listing_images where listing_id = '10000000-0000-0000-0000-000000000001') = 2, 'two photos');
+select pg_temp.expect_error($$select public.replace_listing_images('10000000-0000-0000-0000-000000000001', '[]'::jsonb)$$, 'missing_images');
+select pg_temp.expect_error($$select public.replace_listing_images('10000000-0000-0000-0000-000000000001',
+  (select jsonb_agg(jsonb_build_object('storage_path', '00000000-0000-0000-0000-00000000000a/x/' || i || '.webp')) from generate_series(1, 13) i))$$, 'too_many_images');
+
 -- Draft that must stay private
 insert into public.listings (id, seller_id, title, category_id, condition, age_stages, price_cents, city)
 select '10000000-0000-0000-0000-000000000002', auth.uid(), 'Cuna de madera', id, 'good', '{0_3m}', 300000, 'Puebla'
@@ -78,7 +89,7 @@ reset role;
 set local role anon;
 select set_config('request.jwt.claims', '', true);
 select pg_temp.assert((select count(*) from public.listings) = 1, 'anon sees only the active listing');
-select pg_temp.assert((select count(*) from public.listing_images) = 1, 'anon sees only images of visible listings');
+select pg_temp.assert((select count(*) from public.listing_images) = 2, 'anon sees only images of visible listings');
 select pg_temp.expect_error($$select * from public.private_profiles$$, 'permission denied');
 select pg_temp.expect_error($$select * from public.orders$$, 'permission denied');
 select pg_temp.expect_error($$insert into public.favorites (user_id, listing_id) values ('00000000-0000-0000-0000-00000000000a', '10000000-0000-0000-0000-000000000001')$$, 'permission denied');
@@ -100,6 +111,10 @@ select pg_temp.assert((select count(*) from public.private_profiles) = 1, 'bob s
 update public.listings set title = 'hijacked' where id = '10000000-0000-0000-0000-000000000001';
 select pg_temp.assert((select title from public.listings where id = '10000000-0000-0000-0000-000000000001') <> 'hijacked', 'bob cannot edit alice listing');
 select pg_temp.expect_error($$select public.unpublish_listing('10000000-0000-0000-0000-000000000001')$$, 'listing_not_found');
+
+select pg_temp.expect_error($$select public.replace_listing_images('10000000-0000-0000-0000-000000000001',
+  '[{"storage_path":"00000000-0000-0000-0000-00000000000b/hack.webp"}]'::jsonb)$$, 'row-level security');
+select pg_temp.assert((select count(*) from public.listing_images where listing_id = '10000000-0000-0000-0000-000000000001') = 2, 'bob did not delete alice photos');
 
 insert into public.favorites (user_id, listing_id) values (auth.uid(), '10000000-0000-0000-0000-000000000001');
 select pg_temp.assert((select favorite_count from public.listings where id = '10000000-0000-0000-0000-000000000001') = 1, 'favorite counted');

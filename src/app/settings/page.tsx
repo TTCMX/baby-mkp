@@ -3,7 +3,9 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/features/profile/profile-form";
 import { signOut } from "@/features/auth/actions";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Package } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
@@ -23,6 +25,10 @@ export default async function SettingsPage() {
         <h1 className="text-2xl font-extrabold">Mi cuenta</h1>
         <p className="text-sm text-muted-foreground">{user.email}</p>
       </div>
+
+      <Link href="/sell" className={buttonVariants({ variant: "outline", className: "w-full justify-start" })}>
+        <Package /> Mis productos
+      </Link>
 
       <Card className="p-5">
         <ProfileForm profile={user.profile} phone={privateProfile?.phone ?? null} />

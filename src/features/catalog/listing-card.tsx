@@ -1,9 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ImageOff } from "lucide-react";
 import { LISTING_CONDITIONS } from "@/lib/domain/constants";
 import { formatPrice } from "@/lib/money";
-import { publicImageUrl } from "@/lib/storage";
+import { listingPhotoUrl } from "@/lib/storage";
 import type { ListingCardData } from "./queries";
 
 /** Photo-first product card used across catalogue grids. */
@@ -14,12 +13,12 @@ export function ListingCard({ listing }: { listing: ListingCardData }) {
     <Link href={`/listing/${listing.id}`} className="group block">
       <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-muted">
         {cover ? (
-          <Image
-            src={publicImageUrl(cover.storage_path)}
+          // eslint-disable-next-line @next/next/no-img-element -- photos are pre-resized thumbnails
+          <img
+            src={listingPhotoUrl(cover.storage_path, "thumb")}
             alt={listing.title}
-            fill
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            loading="lazy"
+            className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
         ) : (
           <div className="flex size-full items-center justify-center text-muted-foreground">
