@@ -83,6 +83,7 @@ export function FiltersPanel({ filters, basePath, categories }: Props) {
           <Group title="Categoría">
             <select
               name="category"
+              aria-label="Categoría"
               defaultValue={filters.category ?? ""}
               className="h-11 w-full rounded-xl border border-input bg-card px-3 text-base md:text-sm"
             >

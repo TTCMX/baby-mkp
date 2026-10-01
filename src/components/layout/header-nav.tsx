@@ -14,7 +14,10 @@ export function HeaderNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="hidden gap-[22px] whitespace-nowrap text-[15px] font-bold text-[#46506a] lg:flex">
+    <nav
+      aria-label="Secciones"
+      className="hidden gap-[22px] whitespace-nowrap text-[15px] font-bold text-[#46506a] lg:flex"
+    >
       {links.map(({ href, label }) => {
         const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (

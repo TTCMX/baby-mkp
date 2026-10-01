@@ -91,6 +91,13 @@ supabase/
 - **Storage:** buckets `listing-images` (10 MB) y `avatars` (2 MB), solo JPEG/PNG/WebP, escritura solo en la carpeta propia.
 - Las migraciones futuras que creen funciones deben revocar `execute` a `anon/authenticated`
   y otorgarlo explícitamente (Supabase lo concede por defecto).
+- **Rendimiento:** la analítica de servidor (`track`) y el contador de vistas se envían con `after()`, después de
+  responder. Filtros de ciudad y marca usan índices trigram (`pg_trgm`).
+- **SEO:** `sitemap.xml` (categorías + productos activos, cada hora), `robots.txt` que excluye rutas privadas,
+  Open Graph del sitio (`src/app/opengraph-image.png`) y por producto, y datos estructurados `Product` en cada producto.
+  Las URLs absolutas salen de `NEXT_PUBLIC_SITE_URL`: cámbiala al conectar el dominio propio.
+- **Sin `loading.tsx` global a propósito:** haría streaming de todas las páginas y los `notFound()`/`redirect()`
+  responderían 200 en vez de 404/307.
 
 ## Estado por etapas
 

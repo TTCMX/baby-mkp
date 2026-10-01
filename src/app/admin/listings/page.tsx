@@ -44,7 +44,7 @@ export default async function AdminListings({ searchParams }: PageProps<"/admin/
           className="h-10 flex-1 rounded-full border border-input bg-card px-4 text-sm"
         />
       </form>
-      <nav className="flex flex-wrap gap-1.5 text-xs">
+      <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-1.5 text-xs">
         <FilterChip href={`/admin/listings${q ? `?q=${encodeURIComponent(q)}` : ""}`} active={!status}>
           Todos
         </FilterChip>

@@ -278,9 +278,9 @@ export function SellWizard(props: Props) {
   return (
     <div ref={top} className="mx-auto max-w-3xl scroll-mt-20">
       <div className="mb-5 space-y-2">
-        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        <h1 className="font-sans text-xs font-bold uppercase tracking-wide text-muted-foreground">
           {mode === "new" ? "Vender" : "Editar producto"} · Paso {step + 1} de {STEPS.length} · {STEPS[step]}
-        </p>
+        </h1>
         <div className="flex gap-1.5" aria-hidden>
           {STEPS.map((s, i) => (
             <span key={s} className={cn("h-1.5 flex-1 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />

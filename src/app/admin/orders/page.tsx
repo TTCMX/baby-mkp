@@ -45,7 +45,7 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
 
   return (
     <div className="space-y-4">
-      <nav className="flex flex-wrap gap-1.5 text-xs">
+      <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-1.5 text-xs">
         {chip("/admin/orders", !status && !disputed && !payoutPending, "Todos")}
         {chip("/admin/orders?disputed=1", disputed, "Con problema")}
         {chip("/admin/orders?payout=pending", payoutPending, "Pago pendiente")}

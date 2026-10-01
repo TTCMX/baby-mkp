@@ -52,7 +52,7 @@ export default async function AdminUsers({ searchParams }: PageProps<"/admin/use
           className="h-10 flex-1 rounded-full border border-input bg-card px-4 text-sm"
         />
       </form>
-      <nav className="flex gap-1.5 text-xs">
+      <nav aria-label="Filtrar por estado" className="flex gap-1.5 text-xs">
         <Link
           href="/admin/users"
           className={`rounded-full px-3 py-1 font-semibold ${!suspended ? "bg-foreground text-background" : "bg-muted"}`}

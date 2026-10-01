@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { MapPin, Star, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -11,12 +12,13 @@ import type { Profile } from "@/lib/domain/types";
 const PUBLIC_COLUMNS =
   "id, username, display_name, avatar_url, bio, city, municipality, sales_count, rating_avg, rating_count, created_at";
 
-async function load(username: string) {
+// Cached per request: shared by the page and its metadata.
+const load = cache(async (username: string) => {
   if (!/^[a-z0-9_]{3,30}$/.test(username)) return null;
   const supabase = await createClient();
   const { data } = await supabase.from("profiles").select(PUBLIC_COLUMNS).eq("username", username).maybeSingle();
   return data as Omit<Profile, "role" | "status"> | null;
-}
+});
 
 export async function generateMetadata({ params }: PageProps<"/profile/[username]">): Promise<Metadata> {
   const profile = await load((await params).username);

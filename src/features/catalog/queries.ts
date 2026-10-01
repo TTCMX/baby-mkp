@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Category, Listing } from "@/lib/domain/types";
 import { normalizeLocation, toTsQuery, type CatalogFilters } from "./filters";
@@ -25,11 +26,12 @@ export async function getTopLevelCategories(): Promise<Category[]> {
   return data ?? [];
 }
 
-export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+/** Cached per request: category pages look it up for metadata and content. */
+export const getCategoryBySlug = cache(async (slug: string): Promise<Category | null> => {
   const supabase = await createClient();
   const { data } = await supabase.from("categories").select("*").eq("slug", slug).eq("is_active", true).maybeSingle();
   return data;
-}
+});
 
 type Client = Awaited<ReturnType<typeof createClient>>;
 

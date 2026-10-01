@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Category, Listing, Profile } from "@/lib/domain/types";
 
@@ -68,8 +69,11 @@ export async function getSellerSummary(userId: string): Promise<SellerSummary | 
   return profile ? { ...(profile as Omit<SellerSummary, "active_listings">), active_listings: count ?? 0 } : null;
 }
 
-/** Public listing page. Returns null when missing or not visible to the viewer (RLS). */
-export async function getListingDetail(id: string): Promise<ListingDetail | null> {
+/**
+ * Public listing page. Returns null when missing or not visible to the viewer (RLS).
+ * Cached per request: the page and its metadata share one lookup.
+ */
+export const getListingDetail = cache(async (id: string): Promise<ListingDetail | null> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("listings")
@@ -83,7 +87,7 @@ export async function getListingDetail(id: string): Promise<ListingDetail | null
   const seller = await getSellerSummary(data.seller_id);
   if (!seller) return null;
   return { ...sortImages(data), seller };
-}
+});
 
 export async function getActiveCategories(): Promise<Category[]> {
   const supabase = await createClient();
