@@ -23,6 +23,14 @@ export const AGE_STAGES = {
 } as const;
 export type AgeStage = keyof typeof AGE_STAGES;
 
+/** How a category relates to the baby's age (mirrors `category_age_mode`). */
+export const CATEGORY_AGE_MODES = {
+  none: { label: "Sin etapa", hint: "La edad no importa (muebles, accesorios): sirve para todas" },
+  range: { label: "Orientativa", hint: "Edad recomendada como rango (juguetes, zapatos, carriolas)" },
+  exact: { label: "Exacta", hint: "Etapas puntuales (ropa)" },
+} as const;
+export type CategoryAgeMode = keyof typeof CATEGORY_AGE_MODES;
+
 export const DELIVERY_METHODS = {
   shipping: "Envío",
   local_delivery: "Entrega local",

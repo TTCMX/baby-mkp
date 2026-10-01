@@ -48,6 +48,7 @@ function toViewData(l: ListingDetail): ListingViewData {
     brand: l.brand,
     model: l.model,
     ageStages: l.age_stages,
+    ageMode: l.category?.age_mode,
     categoryName: l.category?.name ?? null,
     isBundle: l.listing_type === "bundle",
     bundleItemCount: l.bundle_item_count,

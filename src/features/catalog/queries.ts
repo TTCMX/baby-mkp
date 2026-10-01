@@ -56,10 +56,14 @@ export async function getLatestListings(limit = 12): Promise<ListingCardData[]> 
   return (data ?? []) as ListingCardData[];
 }
 
-/** Active listings for any of the given age stages, newest first ("Crece con tus bebés" feeds). */
+/**
+ * Active listings for any of the given age stages ("Crece con tus bebés" feeds):
+ * the ones made for the stage first, then "all ages" ones, newest first.
+ */
 export async function getListingsForStages(stages: string[], limit = 10): Promise<ListingCardData[]> {
   const { data, error } = await cardQuery(await createClient())
     .overlaps("age_stages", stages)
+    .order("is_all_ages", { ascending: true })
     .order("published_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -105,11 +109,14 @@ export async function searchListings(f: CatalogFilters): Promise<SearchResult> {
   if (f.maxPriceCents) query = query.lte("price_cents", f.maxPriceCents);
   if (f.brand) query = query.ilike("brand", `%${f.brand}%`);
   if (f.conditions.length) query = query.in("condition", f.conditions);
-  if (f.ages.length) query = query.overlaps("age_stages", f.ages);
+  // A stage filter also matches "all ages" listings (furniture, accessories…), listed after the stage's own.
+  const byStage = f.ages.length > 0 && !f.ages.includes("all_ages");
+  if (f.ages.length) query = query.overlaps("age_stages", byStage ? [...f.ages, "all_ages"] : f.ages);
   if (f.delivery.length) query = query.overlaps("delivery_methods", f.delivery);
   const location = normalizeLocation(f.city);
   if (location) query = query.ilike("location_text", `%${location}%`);
 
+  if (byStage && f.sort === "recent") query = query.order("is_all_ages", { ascending: true });
   switch (f.sort) {
     case "price_asc":
       query = query.order("price_cents", { ascending: true });

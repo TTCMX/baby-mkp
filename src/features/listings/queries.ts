@@ -20,7 +20,7 @@ export type SellerSummary = Pick<
 > & { active_listings: number };
 
 export type ListingDetail = ListingWithImages & {
-  category: Pick<Category, "id" | "slug" | "name"> | null;
+  category: Pick<Category, "id" | "slug" | "name" | "age_mode"> | null;
   seller: SellerSummary;
 };
 
@@ -78,7 +78,7 @@ export const getListingDetail = cache(async (id: string): Promise<ListingDetail 
   const { data } = await supabase
     .from("listings")
     .select(
-      "*, listing_images(storage_path, position, width, height), category:categories!listings_category_id_fkey(id, slug, name)",
+      "*, listing_images(storage_path, position, width, height), category:categories!listings_category_id_fkey(id, slug, name, age_mode)",
     )
     .eq("id", id)
     .maybeSingle<ListingWithImages & { category: ListingDetail["category"] }>();

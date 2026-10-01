@@ -1,4 +1,11 @@
-import type { AgeStage, DeliveryMethod, ListingCondition, ListingStatus, ListingType } from "./constants";
+import type {
+  AgeStage,
+  CategoryAgeMode,
+  DeliveryMethod,
+  ListingCondition,
+  ListingStatus,
+  ListingType,
+} from "./constants";
 
 // Row shapes of the tables used by the app. Replace with generated types
 // (`npm run db:types`) once a Supabase project is linked.
@@ -28,6 +35,7 @@ export type Category = {
   sort_order: number;
   is_active: boolean;
   allows_shipping: boolean;
+  age_mode: CategoryAgeMode;
 };
 
 export type Listing = {

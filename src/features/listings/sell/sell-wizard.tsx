@@ -14,9 +14,11 @@ import {
   LISTING_CONDITIONS,
   keysOf,
   type AgeStage,
+  type CategoryAgeMode,
   type DeliveryMethod,
   type ListingCondition,
 } from "@/lib/domain/constants";
+import { expandRange, normalizeAgeStages, RANGE_STAGES, rangeBounds, type RangeStage } from "@/lib/domain/age-mode";
 import { processImage } from "@/lib/images";
 import { formatPrice, parsePriceToCents } from "@/lib/money";
 import { LISTING_IMAGES_BUCKET, listingFolder, listingPhotoUrl, thumbPath } from "@/lib/storage";
@@ -27,7 +29,13 @@ import { ListingView, type ListingViewData } from "../listing-view";
 import { listingInputSchema, MIN_PRICE_CENTS, type ListingInput } from "../schema";
 import { PhotosStep, type WizardPhoto } from "./photos-step";
 
-export type WizardCategory = { id: string; name: string; icon: string | null; allows_shipping: boolean };
+export type WizardCategory = {
+  id: string;
+  name: string;
+  icon: string | null;
+  allows_shipping: boolean;
+  age_mode: CategoryAgeMode;
+};
 
 export type WizardFields = {
   title: string;
@@ -95,13 +103,18 @@ export function SellWizard(props: Props) {
   };
 
   // Big items: shipping is not offered for categories that don't allow it.
+  // The age question follows the category's age mode (none / range / exact).
   function selectCategory(c: WizardCategory) {
-    setFields((f) => ({
-      ...f,
-      categoryId: c.id,
-      deliveryMethods: c.allows_shipping ? f.deliveryMethods : f.deliveryMethods.filter((m) => m !== "shipping"),
-    }));
-    setErrors((e) => ({ ...e, categoryId: undefined }));
+    setFields((f) => {
+      const prevMode = categories.find((p) => p.id === f.categoryId)?.age_mode;
+      return {
+        ...f,
+        categoryId: c.id,
+        ageStages: normalizeAgeStages(c.age_mode, prevMode === "none" ? [] : f.ageStages),
+        deliveryMethods: c.allows_shipping ? f.deliveryMethods : f.deliveryMethods.filter((m) => m !== "shipping"),
+      };
+    });
+    setErrors((e) => ({ ...e, categoryId: undefined, ageStages: undefined }));
   }
 
   // ---------------------------------------------------------------- photos
@@ -255,6 +268,7 @@ export function SellWizard(props: Props) {
     brand: fields.brand || null,
     model: fields.model || null,
     ageStages: fields.ageStages,
+    ageMode: category?.age_mode,
     categoryName: category?.name ?? null,
     isBundle: fields.isBundle,
     bundleItemCount: Number.parseInt(fields.bundleItemCount, 10) || null,
@@ -369,24 +383,12 @@ export function SellWizard(props: Props) {
               </div>
             </Field>
 
-            <Field label="Edad o etapa (elige todas las que apliquen)" error={errors.ageStages}>
-              <div className="flex flex-wrap gap-2">
-                {keysOf(AGE_STAGES).map((a) => {
-                  const selected = fields.ageStages.includes(a);
-                  return (
-                    <Pill
-                      key={a}
-                      selected={selected}
-                      onClick={() =>
-                        set("ageStages", selected ? fields.ageStages.filter((x) => x !== a) : [...fields.ageStages, a])
-                      }
-                    >
-                      {AGE_STAGES[a]}
-                    </Pill>
-                  );
-                })}
-              </div>
-            </Field>
+            <AgeField
+              mode={category?.age_mode}
+              value={fields.ageStages}
+              error={errors.ageStages}
+              onChange={(v) => set("ageStages", v)}
+            />
 
             <Field label="Precio" htmlFor="price" error={errors.priceCents}>
               <div className="relative">
@@ -625,6 +627,97 @@ function Choice({
     >
       {children}
     </button>
+  );
+}
+
+/** Age question, shaped by the category: nothing, a recommended range, or exact stages. */
+function AgeField({
+  mode,
+  value,
+  error,
+  onChange,
+}: {
+  mode: CategoryAgeMode | undefined;
+  value: AgeStage[];
+  error?: string;
+  onChange: (v: AgeStage[]) => void;
+}) {
+  if (!mode) {
+    return (
+      <Field label="Edad o etapa" error={error}>
+        <p className="text-sm text-muted-foreground">Elige primero la categoría.</p>
+      </Field>
+    );
+  }
+  if (mode === "none") {
+    return (
+      <Field label="Edad o etapa">
+        <p className="rounded-xl bg-muted px-3.5 py-3 text-sm">Sirve para todas las edades: no hace falta indicarla.</p>
+      </Field>
+    );
+  }
+  if (mode === "range") {
+    const all = value.includes("all_ages");
+    const bounds = rangeBounds(value);
+    const pick = (which: "from" | "to", s: RangeStage) => {
+      const other = which === "from" ? (bounds?.to ?? s) : (bounds?.from ?? s);
+      onChange(expandRange(s, other));
+    };
+    return (
+      <Field label="Edad recomendada" error={error}>
+        <div className="grid grid-cols-2 gap-3">
+          {(["from", "to"] as const).map((which) => (
+            <label key={which} className="space-y-1 text-xs font-bold text-muted-foreground">
+              {which === "from" ? "Desde" : "Hasta"}
+              <select
+                value={all ? "" : (bounds?.[which] ?? "")}
+                disabled={all}
+                onChange={(e) => pick(which, e.target.value as RangeStage)}
+                className="h-11 w-full rounded-xl border border-input bg-card px-3 text-base font-normal text-foreground disabled:opacity-50 md:text-sm"
+              >
+                <option value="" disabled>
+                  Elige
+                </option>
+                {RANGE_STAGES.map((s) => (
+                  <option key={s} value={s}>
+                    {AGE_STAGES[s]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+        <label className="flex items-center gap-2 text-sm font-semibold">
+          <input
+            type="checkbox"
+            checked={all}
+            onChange={(e) => onChange(e.target.checked ? ["all_ages"] : [])}
+            className="size-4 accent-primary"
+          />
+          Sirve para todas las edades
+        </label>
+      </Field>
+    );
+  }
+  return (
+    <Field label="Edad o etapa (elige todas las que apliquen)" error={error}>
+      <div className="flex flex-wrap gap-2">
+        {keysOf(AGE_STAGES)
+          .filter((a) => a !== "all_ages")
+          .map((a) => {
+            const selected = value.includes(a);
+            return (
+              <Pill
+                key={a}
+                selected={selected}
+                onClick={() => onChange(selected ? value.filter((x) => x !== a) : [...value, a])}
+              >
+                {AGE_STAGES[a]}
+              </Pill>
+            );
+          })}
+      </div>
+    </Field>
   );
 }
 

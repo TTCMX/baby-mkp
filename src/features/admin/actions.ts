@@ -298,6 +298,7 @@ const categorySchema = z.object({
     .regex(/^[a-z0-9-]{2,60}$/, "Slug: minúsculas, números y guiones"),
   icon: z.string().trim().max(30).optional(),
   sort_order: z.coerce.number().int().min(0).max(10_000),
+  age_mode: z.enum(["none", "range", "exact"]),
   allows_shipping: z.enum(["on"]).optional(),
   is_active: z.enum(["on"]).optional(),
 });

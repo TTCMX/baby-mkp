@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { track } from "@/lib/analytics/server";
 import { LISTING_IMAGES_BUCKET, listingFolder, thumbPath } from "@/lib/storage";
 import type { ListingStatus } from "@/lib/domain/constants";
+import { normalizeAgeStages } from "@/lib/domain/age-mode";
 import { listingInputSchema, type ListingInput } from "./schema";
 
 export type SaveListingResult =
@@ -57,7 +58,7 @@ export async function saveListing(raw: ListingInput, intent: "draft" | "publish"
 
   const { data: category } = await supabase
     .from("categories")
-    .select("id, allows_shipping")
+    .select("id, allows_shipping, age_mode")
     .eq("id", input.categoryId)
     .eq("is_active", true)
     .maybeSingle();
@@ -68,6 +69,12 @@ export async function saveListing(raw: ListingInput, intent: "draft" | "publish"
       error: RPC_ERRORS.shipping_not_allowed,
       fieldErrors: { deliveryMethods: RPC_ERRORS.shipping_not_allowed },
     };
+  }
+
+  const ageStages = normalizeAgeStages(category.age_mode, input.ageStages);
+  if (!ageStages.length) {
+    const msg = "Elige la edad recomendada";
+    return { ok: false, error: msg, fieldErrors: { ageStages: msg } };
   }
 
   let brandId: string | null = null;
@@ -84,7 +91,7 @@ export async function saveListing(raw: ListingInput, intent: "draft" | "publish"
     brand_id: brandId,
     model: input.model,
     condition: input.condition,
-    age_stages: input.ageStages,
+    age_stages: ageStages,
     listing_type: input.isBundle ? "bundle" : "single",
     bundle_item_count: input.isBundle ? input.bundleItemCount : null,
     price_cents: input.priceCents,

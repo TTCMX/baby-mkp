@@ -20,6 +20,8 @@ export default async function AdminSettings() {
         <p className="text-xs text-muted-foreground">
           Íconos disponibles: baby, car, bed, milk, monitor, puzzle, shirt, footprints, backpack, bath, package.
           Desactivar una categoría la oculta del catálogo y del formulario de venta (sus productos siguen existiendo).
+          Edad: <b>Sin etapa</b> no pregunta la edad y aparece en todas las etapas; <b>Orientativa</b> pide un rango de
+          edad recomendada; <b>Exacta</b> pide etapas puntuales.
         </p>
         <ul className="space-y-4">
           {(categories ?? []).map((c) => (

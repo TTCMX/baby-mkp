@@ -86,6 +86,11 @@ supabase/
   un usuario no puede cambiar `status`, `role`, contadores ni ids de Stripe aunque llame a la API directamente.
   Publicar pasa por la RPC `publish_listing` (valida fotos, etapa, envío permitido y moderación).
   Órdenes, pagos y payouts solo los escribe el servidor (service role) desde checkout y webhooks de Stripe.
+- **Edad por categoría (`categories.age_mode`, editable en Admin):** _Sin etapa_ (muebles, accesorios…) no pregunta
+  la edad y se guarda como "Todas las edades" (lo fuerza un trigger); _Orientativa_ (juguetes, zapatos, carriolas…)
+  pide un rango "desde – hasta" que se guarda como etapas contiguas; _Exacta_ (ropa) pide etapas puntuales.
+  Filtrar por etapa incluye los productos "Todas las edades", después de los de esa etapa (`listings.is_all_ages`).
+  Lógica en `src/lib/domain/age-mode.ts` (con tests).
 - **Búsqueda:** PostgreSQL Full Text Search en español sin acentos (`es_unaccent`), con pesos
   título/marca/modelo > categoría > descripción.
 - **Storage:** buckets `listing-images` (10 MB) y `avatars` (2 MB), solo JPEG/PNG/WebP, escritura solo en la carpeta propia.
