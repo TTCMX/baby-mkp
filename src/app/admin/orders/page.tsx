@@ -13,7 +13,6 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
   const sp = await searchParams;
   const status = ORDER_STATUSES.includes(sp.status as OrderStatus) ? (sp.status as OrderStatus) : null;
   const disputed = sp.disputed === "1";
-  const payoutPending = sp.payout === "pending";
 
   const supabase = await createClient(); // admin session (RLS: is_admin)
   let query = supabase
@@ -27,10 +26,6 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
   if (status) query = query.eq("status", status);
   else query = query.neq("status", "pending_payment");
   if (disputed) query = query.not("disputed_at", "is", null).is("dispute_resolved_at", null);
-  if (payoutPending) {
-    const { data: p } = await supabase.from("payouts").select("order_id").in("status", ["pending", "failed"]);
-    query = query.in("id", (p ?? []).map((x) => x.order_id).concat("00000000-0000-0000-0000-000000000000"));
-  }
   const { data: orders, count } = await query;
 
   const chip = (href: string, active: boolean, label: string) => (
@@ -46,9 +41,8 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
   return (
     <div className="space-y-4">
       <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-1.5 text-xs">
-        {chip("/admin/orders", !status && !disputed && !payoutPending, "Todos")}
+        {chip("/admin/orders", !status && !disputed, "Todos")}
         {chip("/admin/orders?disputed=1", disputed, "Con problema")}
-        {chip("/admin/orders?payout=pending", payoutPending, "Pago pendiente")}
         {ORDER_STATUSES.map((s) => chip(`/admin/orders?status=${s}`, status === s, ORDER_STATUS[s].label))}
       </nav>
       <p className="text-sm text-muted-foreground">{count ?? 0} pedidos</p>

@@ -17,6 +17,7 @@ export type OrderRow = {
   commission_percentage: number;
   platform_commission_cents: number;
   seller_net_cents: number;
+  balance_applied_cents: number;
   paid_at: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
@@ -68,23 +69,14 @@ export function coverOf(order: OrderRow) {
 export type OrderExtras = {
   contact: { display_name: string; email: string | null; phone: string | null } | null;
   reviews: { reviewer_id: string; rating: number; comment: string | null }[];
-  payout: { status: string; amount_cents: number; released_at: string | null } | null;
 };
 
-/** Counterpart contact (after payment), reviews of this order, and the seller payout. */
-export async function getOrderExtras(order: OrderRow, userId: string): Promise<OrderExtras> {
+/** Counterpart contact (after payment) and reviews of this order. */
+export async function getOrderExtras(order: OrderRow): Promise<OrderExtras> {
   const supabase = await createClient();
-  const [contact, reviews, payout] = await Promise.all([
+  const [contact, reviews] = await Promise.all([
     supabase.rpc("order_contact", { p_order_id: order.id }).maybeSingle<NonNullable<OrderExtras["contact"]>>(),
     supabase.from("reviews").select("reviewer_id, rating, comment").eq("order_id", order.id),
-    order.seller_id === userId
-      ? supabase
-          .from("payouts")
-          .select("status, amount_cents, released_at")
-          .eq("order_id", order.id)
-          .neq("status", "cancelled")
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
   ]);
-  return { contact: contact.data ?? null, reviews: reviews.data ?? [], payout: payout.data ?? null };
+  return { contact: contact.data ?? null, reviews: reviews.data ?? [] };
 }

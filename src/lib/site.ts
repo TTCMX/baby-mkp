@@ -14,6 +14,7 @@ export const PRIVATE_PATHS = [
   "/admin",
   "/notifications",
   "/babies",
+  "/balance",
   "/favorites",
   "/messages",
   "/suspended",

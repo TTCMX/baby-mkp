@@ -13,6 +13,8 @@
   --popover-foreground: var(--foreground);
   --primary: #286eb2;
   --primary-foreground: #ffffff;
+  /* Hover darkens (lightening would drop white text below AA contrast). */
+  --primary-hover: #215d97;
   --secondary: #eaf4fd;
   --secondary-foreground: #2b5e91;
   --muted: #eef4fa;
@@ -52,6 +54,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);

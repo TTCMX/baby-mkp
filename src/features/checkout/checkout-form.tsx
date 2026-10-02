@@ -31,6 +31,8 @@ type Props = {
   deliveryMethods: DeliveryMethod[];
   sellerLocation: string;
   savedAddress: SavedAddress;
+  /** Buyer's available balance; applied first, the card pays the rest. */
+  balanceCents: number;
 };
 
 const DELIVERY_HINTS: Record<DeliveryMethod, string> = {
@@ -46,11 +48,16 @@ export function CheckoutForm({
   deliveryMethods,
   sellerLocation,
   savedAddress,
+  balanceCents,
 }: Props) {
   const [state, action, pending] = useActionState<CheckoutState, FormData>(startCheckout, undefined);
   const [method, setMethod] = useState<DeliveryMethod>(deliveryMethods[0]);
   const shipping = method === "shipping" ? (shippingPriceCents ?? 0) : 0;
   const needsAddress = method !== "pickup";
+  const total = priceCents + shipping;
+  const [useBalance, setUseBalance] = useState(balanceCents > 0);
+  const applied = useBalance ? Math.min(balanceCents, total) : 0;
+  const card = total - applied;
   // Hide a field's error as soon as the buyer edits it (until the next submit).
   const [edited, setEdited] = useState<Set<string>>(new Set());
   const err = (k: string) => (edited.has(k) ? undefined : state?.fieldErrors?.[k]);
@@ -193,10 +200,35 @@ export function CheckoutForm({
         <div className="border-t pt-2">
           <Row
             label={<span className="text-base font-extrabold">Total</span>}
-            value={<span className="text-base font-extrabold">{formatPrice(priceCents + shipping)}</span>}
+            value={<span className="text-base font-extrabold">{formatPrice(total)}</span>}
           />
         </div>
+        {applied > 0 && (
+          <>
+            <Row label="Pagas con tu saldo" value={`− ${formatPrice(applied)}`} />
+            {card > 0 && <Row label={<b>Pagas con tarjeta</b>} value={<b>{formatPrice(card)}</b>} />}
+          </>
+        )}
       </section>
+
+      {balanceCents > 0 && (
+        <label className="flex items-start gap-3 rounded-2xl border bg-card p-4 text-sm">
+          <input
+            type="checkbox"
+            name="useBalance"
+            checked={useBalance}
+            onChange={(e) => setUseBalance(e.target.checked)}
+            className="mt-0.5 size-4 accent-primary"
+          />
+          <span>
+            <span className="block font-bold">Usar mi saldo</span>
+            <span className="text-muted-foreground">
+              Tienes {formatPrice(balanceCents)} disponibles
+              {balanceCents >= total ? "; alcanza para todo." : "; el resto lo pagas con tarjeta."}
+            </span>
+          </span>
+        </label>
+      )}
 
       {state?.error && (
         <p role="alert" className="text-sm font-semibold text-destructive">
@@ -205,10 +237,11 @@ export function CheckoutForm({
       )}
 
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
-        <Lock /> {pending ? "Preparando pago…" : `Pagar ${formatPrice(priceCents + shipping)}`}
+        <Lock /> {pending ? "Preparando pago…" : card === 0 ? "Pagar con mi saldo" : `Pagar ${formatPrice(card)}`}
       </Button>
       <p className="text-center text-xs text-muted-foreground">
-        Pago seguro con Stripe. Guardamos tu dinero hasta que recibas tu producto.
+        {card === 0 ? "Pagas con tu saldo." : "Pago seguro con Stripe."} Guardamos tu dinero hasta que recibas tu
+        producto.
       </p>
     </form>
   );

@@ -13,13 +13,15 @@ export function OrderControls({ id, status, openDispute }: { id: string; status:
         <AdminActionButton
           label={openDispute ? "Resolver a favor del comprador (reembolso)" : "Reembolsar"}
           variant="destructive"
-          askReason="Motivo del reembolso (lo verán comprador y vendedor). Se devolverá el total al comprador y, si ya se pagó al vendedor, se revertirá la transferencia:"
+          askReason="Motivo del reembolso (lo verán comprador y vendedor). Se devolverá el total al comprador (tarjeta y saldo) y, si el vendedor ya recibió el saldo de esta venta, se le descontará:"
           action={(r) => refundOrderAsAdmin(id, r)}
         />
       )}
       {canComplete && (
         <AdminActionButton
-          label={openDispute ? "Resolver a favor del vendedor (completar)" : "Completar y liberar pago"}
+          label={
+            openDispute ? "Resolver a favor del vendedor (completar)" : "Completar (acredita el saldo al vendedor)"
+          }
           variant="default"
           askReason="Nota de la resolución (la verán comprador y vendedor):"
           action={(r) => completeOrderAsAdmin(id, r)}

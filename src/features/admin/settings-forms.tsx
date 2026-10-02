@@ -19,6 +19,7 @@ type Settings = {
   concierge_min_price_cents: number;
   max_images_per_listing: number;
   order_auto_complete_days: number;
+  withdrawal_min_cents: number;
   listings_require_review: boolean;
 };
 
@@ -55,6 +56,12 @@ export function SettingsForm({ s }: { s: Settings }) {
           label="Días para completar tras 'entregado'"
           name="order_auto_complete_days"
           value={s.order_auto_complete_days}
+          step="1"
+        />
+        <Field
+          label="Retiro mínimo de saldo (MXN, 0 = sin mínimo)"
+          name="withdrawal_min"
+          value={s.withdrawal_min_cents / 100}
           step="1"
         />
       </div>

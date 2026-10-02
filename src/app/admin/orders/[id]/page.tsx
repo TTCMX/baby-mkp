@@ -20,7 +20,7 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
   const supabase = await createClient(); // admin session
-  const [{ data: o }, { data: payment }, { data: payout }] = await Promise.all([
+  const [{ data: o }, { data: payment }, { data: sale }] = await Promise.all([
     supabase
       .from("orders")
       .select(
@@ -35,7 +35,7 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from("payouts").select("*").eq("order_id", id).neq("status", "cancelled").maybeSingle(),
+    supabase.from("wallet_entries").select("created_at").eq("order_id", id).eq("kind", "sale").maybeSingle(),
   ]);
   if (!o) notFound();
   const buyer = o.buyer as { username: string; display_name: string };
@@ -134,22 +134,9 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
                 </>
               )}
             </p>
+            {o.balance_applied_cents > 0 && <p>Pagado con saldo: {formatPrice(o.balance_applied_cents)}</p>}
             <p>
-              Payout al vendedor: {payout?.status ?? "aún no"}
-              {payout?.failure_reason && <span className="text-destructive"> · {payout.failure_reason}</span>}
-              {payout?.stripe_transfer_id && (
-                <>
-                  {" · "}
-                  <a
-                    className="text-primary"
-                    href={`${stripeBase()}/connect/transfers/${payout.stripe_transfer_id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    ver transferencia
-                  </a>
-                </>
-              )}
+              Saldo al vendedor: {sale ? `acreditado el ${t(sale.created_at)}` : "aún no (se acredita al completarse)"}
             </p>
           </div>
         </section>

@@ -3,7 +3,7 @@
 Marketplace C2C mobile-first para comprar y vender productos de bebé de segunda mano.
 
 **Stack:** Next.js 16 (App Router, Server Actions) · TypeScript · Tailwind CSS 4 + componentes estilo shadcn/ui ·
-Supabase (Postgres, Auth, Storage) · Stripe Connect · OpenAI · PostHog · Sentry · Resend · Vercel.
+Supabase (Postgres, Auth, Storage) · Stripe (cobro) · OpenAI · PostHog · Sentry · Resend · Vercel.
 
 Monolito modular. Sin backend separado, microservicios, GraphQL, Redis ni Elasticsearch.
 
@@ -39,6 +39,28 @@ Requiere los secrets de GitHub `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_ID` y 
   `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`.
 - La comisión sale de `platform_settings` (`platform_commission_percentage`, o `concierge_commission_percentage`
   para ventas concierge) y se guarda como snapshot en la orden junto con la tarifa de Stripe y los netos.
+
+## Saldo y retiros
+
+Los compradores pagan con tarjeta en **la cuenta de Stripe de la plataforma** (sin Stripe Connect). El vendedor recibe
+**saldo** cuando la orden se completa (trigger `orders_credit_seller`) y puede:
+
+- **usarlo para comprar**: en el checkout se aplica primero el saldo y el resto va a tarjeta; si alcanza, la orden se
+  paga al instante sin Stripe. Si el pago no se completa, el saldo regresa.
+- **retirarlo**: guarda su CLABE (validada con dígito verificador), nombre del titular y banco en `/balance`. Lo
+  solicitado hasta el **viernes 23:59 (hora del centro)** se paga el **martes siguiente** por SPEI
+  (`withdrawal_payout_date`). Mínimo configurable en Admin (`withdrawal_min_cents`, 0 = sin mínimo).
+
+Operación semanal en **Admin → Retiros**: descarga el CSV del martes, haz las transferencias desde el banco y marca
+cada retiro como pagado (con la clave de rastreo) o como no pagado (el monto regresa al saldo y se avisa al usuario).
+
+Contabilidad: `wallet_entries` es un libro mayor de solo inserción (venta, compra, devolución, reembolso, retiro…) y
+`wallets` guarda el saldo corriente; ambos siempre cuadran (lo verifican los tests). Un reembolso devuelve la parte
+pagada con tarjeta por Stripe y la parte con saldo al saldo del comprador; si el vendedor ya tenía el saldo de esa
+venta, se le descuenta (puede quedar negativo y se compensa con sus siguientes ventas).
+
+> ⚖️ Un saldo que se puede gastar puede considerarse dinero electrónico (Ley Fintech / IFPE). Por diseño solo nace de
+> ventas, no se recarga ni se transfiere entre usuarios y siempre se puede retirar; aun así, valídalo con un abogado.
 
 ## Tareas programadas
 
@@ -85,7 +107,7 @@ supabase/
 - **Seguridad en la base de datos, no en el frontend.** RLS en todas las tablas + _grants por columna_:
   un usuario no puede cambiar `status`, `role`, contadores ni ids de Stripe aunque llame a la API directamente.
   Publicar pasa por la RPC `publish_listing` (valida fotos, etapa, envío permitido y moderación).
-  Órdenes, pagos y payouts solo los escribe el servidor (service role) desde checkout y webhooks de Stripe.
+  Órdenes, pagos y movimientos de saldo solo los escribe el servidor (service role / RPCs `security definer`).
 - **Edad por categoría (`categories.age_mode`, editable en Admin):** _Sin etapa_ (muebles, accesorios…) no pregunta
   la edad y se guarda como "Todas las edades" (lo fuerza un trigger); _Orientativa_ (juguetes, zapatos, carriolas…)
   pide un rango "desde – hasta" que se guarda como etapas contiguas; _Exacta_ (ropa) pide etapas puntuales.
@@ -115,23 +137,23 @@ supabase/
 - [x] **6. Catálogo:** búsqueda de texto (PostgreSQL FTS en español, sin acentos, palabras parciales, también por edad
       y condición), filtros combinables en la URL (categoría, precio, marca, condición, edad, ubicación con alias como
       "CDMX", entrega), orden, paginación, `/category/[slug]` y home con Nuevos / Cerca de ti / Populares / Compra por etapa.
-- [x] **7. Checkout con Stripe Connect:** el comprador elige entrega (+ dirección), paga en Stripe Checkout;
+- [x] **7. Checkout:** el comprador elige entrega (+ dirección), paga con su saldo y/o en Stripe Checkout;
       el producto queda reservado mientras paga y vendido al confirmarse el pago (webhook firmado e idempotente).
-      Modelo _separate charges and transfers_: la plataforma cobra y retiene; la transferencia al vendedor se hace al
-      completar la orden (etapa 8). Vendedores configuran cobros con onboarding de Stripe (cuenta Express, MX).
+      La plataforma cobra y retiene; el vendedor recibe saldo al completarse la orden (ver "Saldo y retiros").
       Reembolso automático si un pago llega después de liberar la reserva. `/orders` y `/orders/[id]` básicos.
 - [x] **8. Órdenes:** el vendedor marca enviado (con guía) o entregado; el comprador confirma o reporta un problema
       (congela la orden y el pago). Si no hay respuesta en `order_auto_complete_days` (3) días tras "entregado", se
-      completa sola (al abrir la orden y con el job diario `/api/cron/orders`). Al completar se transfiere el neto al
-      vendedor (Stripe transfer idempotente; queda pendiente y se paga solo cuando termina su alta de cobros).
+      completa sola (al abrir la orden y con el job diario `/api/cron/orders`). Al completar, el neto pasa al saldo
+      del vendedor.
       Reseñas en ambos sentidos, perfil público `/profile/[username]`, avisos en la app y contacto entre las partes
       tras el pago.
 - [x] **9. Admin (`/admin`):** métricas (GMV, revenue, revenue neto, take rate, sell-through, días hasta venta,
       ticket promedio) con alertas de pendientes; productos (buscar, filtrar, aprobar, rechazar, editar, desactivar,
       reactivar, marcar vendido); usuarios (buscar por nombre/usuario/correo, suspender pausando sus productos,
-      reactivar); pedidos (filtrar, resolver problemas a favor de comprador —reembolso— o vendedor —completar y pagar—,
-      reembolsar revirtiendo la transferencia si ya se pagó); configuración (comisiones, umbral concierge, moderación,
-      fotos, días de confirmación) y categorías. Toda acción queda en `admin_audit_log`.
+      reactivar); pedidos (filtrar, resolver problemas a favor de comprador —reembolso— o vendedor —completar y
+      acreditar saldo—); retiros semanales (CSV, pagado / no pagado); configuración (comisiones, umbral concierge,
+      moderación, fotos, días de confirmación, retiro mínimo) y categorías. Toda acción queda en `admin_audit_log`.
+- [x] **Saldo:** ventas → saldo; comprar con saldo (+ tarjeta); retiros a CLABE los martes (corte viernes).
 - [x] **Crece con tus bebés:** los padres registran a sus bebés (nombre + fecha de nacimiento o de parto; privado).
       La app calcula su etapa (Embarazo, RN = primer mes, 0–3 meses, …) con fechas de calendario (`src/features/babies/stages.ts`, con tests) y el inicio muestra:
       selector de bebés, línea de tiempo de etapas, "Le queda chico" (vender lo de la etapa anterior con la edad

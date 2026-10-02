@@ -10,7 +10,10 @@ export type Metrics = {
   take_rate: number;
   completed_orders: number;
   open_disputes: number;
-  pending_payouts: number;
+  pending_withdrawals: number;
+  pending_withdrawals_cents: number;
+  /** Sum of every user's balance: money the platform owes. */
+  balances_cents: number;
   active_listings: number;
   sold_listings: number;
   pending_review: number;

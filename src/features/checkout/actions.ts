@@ -5,13 +5,16 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { track } from "@/lib/analytics/server";
 import { publicEnv } from "@/lib/env";
+import { formatPrice } from "@/lib/money";
 import { computeOrderAmounts } from "@/lib/pricing";
 import { getPlatformSettings } from "@/lib/settings";
 import { listingPhotoUrl } from "@/lib/storage";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { getMyBalance } from "@/features/wallet/queries";
 import { addressSchema, CHECKOUT_ERRORS, checkoutSchema } from "./schema";
+import { trackOrderPaid } from "./webhook";
 
 export type CheckoutState = { error?: string; fieldErrors?: Record<string, string> } | undefined;
 
@@ -58,6 +61,10 @@ export async function startCheckout(_prev: CheckoutState, formData: FormData): P
     commissionPercentage: commission,
   });
 
+  // Balance first, card for the rest. The RPC takes it atomically (and fails if it's no longer there).
+  const balanceCents = raw.useBalance === "on" ? Math.min(await getMyBalance(user.id), amounts.totalCents) : 0;
+  const cardCents = amounts.totalCents - balanceCents;
+
   const admin = createAdminClient();
   const { data: orderId, error: orderError } = await admin.rpc("create_checkout_order", {
     p_listing_id: listingId,
@@ -69,6 +76,7 @@ export async function startCheckout(_prev: CheckoutState, formData: FormData): P
     p_commission_percentage: amounts.commissionPercentage,
     p_platform_commission_cents: amounts.platformCommissionCents,
     p_seller_net_cents: amounts.sellerNetCents,
+    p_balance_cents: balanceCents,
   });
   if (orderError || !orderId) {
     const key = Object.keys(CHECKOUT_ERRORS).find((k) => orderError?.message.includes(k));
@@ -79,6 +87,20 @@ export async function startCheckout(_prev: CheckoutState, formData: FormData): P
   // Remember the address for next time (buyer's own row, RLS applies).
   if (address) await saveDefaultAddress(user.id, address);
 
+  const startedProps = {
+    listing_id: listingId,
+    order_id: orderId,
+    total_cents: amounts.totalCents,
+    balance_cents: balanceCents,
+    delivery: deliveryMethod,
+  };
+  if (cardCents === 0) {
+    // Paid entirely with balance: the order is already paid, no Stripe step.
+    await track("checkout_started", user.id, startedProps);
+    await trackOrderPaid(orderId);
+    redirect(`/orders/${orderId}?paid=1`);
+  }
+
   const site = publicEnv().NEXT_PUBLIC_SITE_URL;
   const cover = [...(listing.listing_images ?? [])].sort((a, b) => a.position - b.position)[0];
   let sessionUrl: string;
@@ -87,36 +109,53 @@ export async function startCheckout(_prev: CheckoutState, formData: FormData): P
       {
         mode: "payment",
         currency: "mxn",
-        line_items: [
-          {
-            quantity: 1,
-            price_data: {
-              currency: "mxn",
-              unit_amount: amounts.itemPriceCents,
-              product_data: {
-                name: listing.title,
-                ...(cover && { images: [listingPhotoUrl(cover.storage_path)] }),
-              },
-            },
-          },
-          ...(amounts.shippingCents > 0
-            ? [
+        line_items:
+          balanceCents > 0
+            ? // Stripe has no negative lines: one line for what the card pays.
+              [
                 {
                   quantity: 1,
                   price_data: {
                     currency: "mxn",
-                    unit_amount: amounts.shippingCents,
-                    product_data: { name: "Envío" },
+                    unit_amount: cardCents,
+                    product_data: {
+                      name: listing.title,
+                      description: `Total ${formatPrice(amounts.totalCents)} − saldo aplicado ${formatPrice(balanceCents)}`,
+                      ...(cover && { images: [listingPhotoUrl(cover.storage_path)] }),
+                    },
                   },
                 },
               ]
-            : []),
-        ],
+            : [
+                {
+                  quantity: 1,
+                  price_data: {
+                    currency: "mxn",
+                    unit_amount: amounts.itemPriceCents,
+                    product_data: {
+                      name: listing.title,
+                      ...(cover && { images: [listingPhotoUrl(cover.storage_path)] }),
+                    },
+                  },
+                },
+                ...(amounts.shippingCents > 0
+                  ? [
+                      {
+                        quantity: 1,
+                        price_data: {
+                          currency: "mxn",
+                          unit_amount: amounts.shippingCents,
+                          product_data: { name: "Envío" },
+                        },
+                      },
+                    ]
+                  : []),
+              ],
         customer_email: user.email ?? undefined,
         client_reference_id: orderId,
         metadata: { order_id: orderId, listing_id: listingId },
-        // Funds stay on the platform; the seller's transfer is created when the order completes.
-        payment_intent_data: { transfer_group: orderId, metadata: { order_id: orderId, listing_id: listingId } },
+        // Funds stay on the platform; the seller gets balance when the order completes.
+        payment_intent_data: { metadata: { order_id: orderId, listing_id: listingId } },
         expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_TTL_SECONDS,
         success_url: `${site}/orders/${orderId}?paid=1`,
         cancel_url: `${site}/checkout/${listingId}?cancelled=${orderId}`,
@@ -133,12 +172,7 @@ export async function startCheckout(_prev: CheckoutState, formData: FormData): P
     return { error: "No pudimos conectar con el procesador de pagos. Intenta de nuevo." };
   }
 
-  await track("checkout_started", user.id, {
-    listing_id: listingId,
-    order_id: orderId,
-    total_cents: amounts.totalCents,
-    delivery: deliveryMethod,
-  });
+  await track("checkout_started", user.id, startedProps);
   redirect(sessionUrl);
 }
 

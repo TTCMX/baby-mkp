@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
+import { track } from "@/lib/analytics/server";
 import { LISTING_CONDITIONS, keysOf } from "@/lib/domain/constants";
 import { parsePriceToCents } from "@/lib/money";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { processPayout, trackCompletion } from "@/features/payments/payouts";
+import { trackCompletion } from "@/features/orders/completion";
 import { logAdminAction } from "./audit";
 import { refundOrder as refund } from "./refunds";
 
@@ -192,7 +193,7 @@ export async function refundOrderAsAdmin(orderId: string, reason: string): Promi
   return { ok: "Reembolso realizado" };
 }
 
-/** Dispute resolved for the seller (or a stuck order): complete it and release the payout. */
+/** Dispute resolved for the seller (or a stuck order): complete it, which credits the seller's balance. */
 export async function completeOrderAsAdmin(orderId: string, note: string): Promise<AdminResult> {
   const admin = await requireAdmin();
   if (!uuid.safeParse(orderId).success) return { error: "Pedido inválido" };
@@ -237,16 +238,41 @@ export async function completeOrderAsAdmin(orderId: string, note: string): Promi
     })),
   );
   await trackCompletion(orderId);
-  const payout = await processPayout(orderId);
-  await logAdminAction(admin.id, "order.complete", "order", orderId, { note: cleanNote, payout });
+  await logAdminAction(admin.id, "order.complete", "order", orderId, { note: cleanNote });
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");
-  return {
-    ok:
-      payout === "paid"
-        ? "Pedido completado y pago liberado"
-        : "Pedido completado (pago pendiente de la cuenta del vendedor)",
-  };
+  return { ok: "Pedido completado: el vendedor ya tiene el dinero en su saldo" };
+}
+
+// --------------------------------------------------------------- withdrawals
+
+/** The SPEI transfer went out (paid) or bounced (failed: the amount goes back to the balance). */
+export async function settleWithdrawalAsAdmin(id: string, paid: boolean, input: string): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  if (!uuid.safeParse(id).success) return { error: "Retiro inválido" };
+  const note = input?.trim().slice(0, paid ? 100 : 500) ?? "";
+  if (!paid && note.length < 5) return { error: "Escribe el motivo (lo verá el usuario)" };
+
+  const { data, error } = await createAdminClient()
+    .rpc("settle_withdrawal", {
+      p_withdrawal_id: id,
+      p_paid: paid,
+      p_admin: admin.id,
+      p_reference: paid ? note : null,
+      p_reason: paid ? null : note,
+    })
+    .single<{ user_id: string; amount_cents: number }>();
+  if (error || !data) {
+    if (error?.message.includes("invalid_transition")) return { error: "Este retiro ya fue procesado" };
+    return fail(error, "No pudimos actualizar el retiro");
+  }
+  await logAdminAction(admin.id, paid ? "withdrawal.paid" : "withdrawal.failed", "withdrawal", id, {
+    amount_cents: data.amount_cents,
+    ...(paid ? { reference: note || null } : { reason: note }),
+  });
+  if (paid) await track("withdrawal_paid", data.user_id, { withdrawal_id: id, amount_cents: data.amount_cents });
+  revalidatePath("/admin/withdrawals");
+  return { ok: paid ? "Marcado como pagado" : "Marcado como no pagado; el saldo regresó al usuario" };
 }
 
 // ------------------------------------------------------------------ settings
@@ -257,6 +283,7 @@ const settingsSchema = z.object({
   concierge_min_price: z.coerce.number().int().min(0).max(1_000_000),
   max_images_per_listing: z.coerce.number().int().min(1).max(20),
   order_auto_complete_days: z.coerce.number().int().min(1).max(60),
+  withdrawal_min: z.coerce.number().int().min(0).max(100_000),
   listings_require_review: z.enum(["on", "off"]).optional(),
 });
 
@@ -272,6 +299,7 @@ export async function updatePlatformSettings(_prev: AdminResult | undefined, for
     concierge_min_price_cents: d.concierge_min_price * 100,
     max_images_per_listing: d.max_images_per_listing,
     order_auto_complete_days: d.order_auto_complete_days,
+    withdrawal_min_cents: d.withdrawal_min * 100,
     listings_require_review: d.listings_require_review === "on",
   };
 

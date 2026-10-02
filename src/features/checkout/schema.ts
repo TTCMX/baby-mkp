@@ -36,4 +36,5 @@ export const CHECKOUT_ERRORS: Record<string, string> = {
   price_changed: "El precio cambió. Revisa el producto de nuevo.",
   shipping_changed: "El costo de envío cambió. Revisa el producto de nuevo.",
   address_required: "Necesitamos tu dirección para la entrega.",
+  insufficient_balance: "Tu saldo cambió. Revisa el total e intenta de nuevo.",
 };

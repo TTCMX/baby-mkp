@@ -9,6 +9,8 @@ export const AUDIT_LABELS: Record<string, string> = {
   "user.reactivate": "Reactivó una cuenta",
   "order.refund": "Reembolsó un pedido",
   "order.complete": "Completó un pedido",
+  "withdrawal.paid": "Marcó un retiro como pagado",
+  "withdrawal.failed": "Marcó un retiro como no pagado",
   "settings.update": "Cambió la configuración",
   "category.create": "Creó una categoría",
   "category.update": "Editó una categoría",

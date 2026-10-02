@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { runOrderMaintenance } from "@/features/payments/payouts";
+import { runOrderMaintenance } from "@/features/orders/completion";
 
 /**
  * Daily (vercel.json cron): auto-completes orders whose confirmation window
- * elapsed and retries pending payouts. Vercel sends `Authorization: Bearer $CRON_SECRET`.
+ * elapsed (which credits the sellers' balance). Vercel sends `Authorization: Bearer $CRON_SECRET`.
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
