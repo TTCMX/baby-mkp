@@ -13,12 +13,14 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
   const sp = await searchParams;
   const status = ORDER_STATUSES.includes(sp.status as OrderStatus) ? (sp.status as OrderStatus) : null;
   const disputed = sp.disputed === "1";
+  // Managed sellers' sales waiting for the warehouse to deliver them.
+  const managed = sp.managed === "1";
 
   const supabase = await createClient(); // admin session (RLS: is_admin)
   let query = supabase
     .from("orders")
     .select(
-      "id, status, total_cents, platform_commission_cents, created_at, disputed_at, dispute_resolved_at, order_items(title), buyer:profiles!orders_buyer_id_fkey(username), seller:profiles!orders_seller_id_fkey(username)",
+      `id, status, total_cents, platform_commission_cents, created_at, disputed_at, dispute_resolved_at, order_items(title), buyer:profiles!orders_buyer_id_fkey(username), seller:profiles!orders_seller_id_fkey${managed ? "!inner" : ""}(username, is_managed)`,
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -26,6 +28,7 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
   if (status) query = query.eq("status", status);
   else query = query.neq("status", "pending_payment");
   if (disputed) query = query.not("disputed_at", "is", null).is("dispute_resolved_at", null);
+  if (managed) query = query.eq("seller.is_managed", true).in("status", ["paid", "in_delivery"]);
   const { data: orders, count } = await query;
 
   const chip = (href: string, active: boolean, label: string) => (
@@ -41,8 +44,9 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
   return (
     <div className="space-y-4">
       <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-1.5 text-xs">
-        {chip("/admin/orders", !status && !disputed, "Todos")}
+        {chip("/admin/orders", !status && !disputed && !managed, "Todos")}
         {chip("/admin/orders?disputed=1", disputed, "Con problema")}
+        {chip("/admin/orders?managed=1", managed, "Gestionados por entregar")}
         {ORDER_STATUSES.map((s) => chip(`/admin/orders?status=${s}`, status === s, ORDER_STATUS[s].label))}
       </nav>
       <p className="text-sm text-muted-foreground">{count ?? 0} pedidos</p>

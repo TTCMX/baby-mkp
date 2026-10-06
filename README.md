@@ -62,6 +62,28 @@ venta, se le descuenta (puede quedar negativo y se compensa con sus siguientes v
 > ⚖️ Un saldo que se puede gastar puede considerarse dinero electrónico (Ley Fintech / IFPE). Por diseño solo nace de
 > ventas, no se recarga ni se transfiere entre usuarios y siempre se puede retirar; aun así, valídalo con un abogado.
 
+## Vendedores gestionados e importación masiva
+
+Para inventario en consignación (productos de muchas personas guardados en la bodega): **Admin → Gestionados →
+Importar productos**.
+
+1. Sube un CSV (plantilla descargable; Excel en español con `;` también funciona). Columnas: `id_producto`,
+   `vendedor_id`, `vendedor_nombre` (+ `vendedor_alias`, `vendedor_email`, `vendedor_telefono` opcionales), `titulo`,
+   `descripcion`, `categoria`, `condicion`, `edad`, `precio`, `marca`, `modelo`, `fotos` (enlaces), `piezas`.
+   Acepta sinónimos ("carreola", "como nuevo", "0 a 3 meses", "RN a 2-4 años") y enlaces compartidos de Drive/Dropbox.
+2. Revisión en el navegador antes de guardar nada: errores por fila, descargables.
+3. Ubicación y formas de entrega de la bodega (aplican a todo el archivo).
+4. Importa en lotes (3 en paralelo); descarga las fotos, las optimiza igual que el formulario de venta y crea los
+   productos ya publicados. Es **re-ejecutable**: `id_producto` y `vendedor_id` son las llaves, así que repetir el
+   archivo actualiza lo que cambió y no duplica (las fotos solo se vuelven a descargar si cambian sus enlaces).
+
+Cada `vendedor_id` se vuelve un **perfil gestionado**: público con nombre + inicial (o el alias), sin acceso a la
+cuenta (correo reservado `@gestionado.invalid` y contraseña aleatoria). Nombre real, correo y teléfono quedan en
+`private_profiles` (solo admins). Los admins operan sus ventas (marcar enviado/entregado: la base de datos solo lo
+permite para perfiles gestionados), guardan su CLABE y piden sus retiros; los compradores ven el **contacto de la
+bodega** configurado en Gestionados. Las fotos usan Storage: ~15 000 fotos ocupan varios GB (el plan gratis de
+Supabase tiene 1 GB).
+
 ## Tareas programadas
 
 `vercel.json` programa `/api/cron/orders` una vez al día (plan Hobby). Requiere la variable `CRON_SECRET` en Vercel.
@@ -153,6 +175,7 @@ supabase/
       reactivar); pedidos (filtrar, resolver problemas a favor de comprador —reembolso— o vendedor —completar y
       acreditar saldo—); retiros semanales (CSV, pagado / no pagado); configuración (comisiones, umbral concierge,
       moderación, fotos, días de confirmación, retiro mínimo) y categorías. Toda acción queda en `admin_audit_log`.
+- [x] **Vendedores gestionados:** importación masiva desde CSV (perfiles sin acceso operados por admins).
 - [x] **Saldo:** ventas → saldo; comprar con saldo (+ tarjeta); retiros a CLABE los martes (corte viernes).
 - [x] **Crece con tus bebés:** los padres registran a sus bebés (nombre + fecha de nacimiento o de parto; privado).
       La app calcula su etapa (Embarazo, RN = primer mes, 0–3 meses, …) con fechas de calendario (`src/features/babies/stages.ts`, con tests) y el inicio muestra:

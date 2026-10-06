@@ -5,6 +5,7 @@ import { DELIVERY_METHODS, type DeliveryMethod, type OrderStatus } from "@/lib/d
 import { formatPrice } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
 import { AuditHistory } from "@/features/admin/audit-history";
+import { ManagedOrderControls } from "@/features/admin/managed-controls";
 import { OrderControls } from "@/features/admin/order-controls";
 import { ORDER_STATUS } from "@/features/orders/status";
 
@@ -24,7 +25,7 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
     supabase
       .from("orders")
       .select(
-        "*, order_items(title), buyer:profiles!orders_buyer_id_fkey(username, display_name), seller:profiles!orders_seller_id_fkey(username, display_name)",
+        "*, order_items(title), buyer:profiles!orders_buyer_id_fkey(username, display_name), seller:profiles!orders_seller_id_fkey(username, display_name, is_managed)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -39,7 +40,7 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
   ]);
   if (!o) notFound();
   const buyer = o.buyer as { username: string; display_name: string };
-  const seller = o.seller as { username: string; display_name: string };
+  const seller = o.seller as { username: string; display_name: string; is_managed: boolean };
   const openDispute = Boolean(o.disputed_at && !o.dispute_resolved_at);
   const t = (d: string | null) => (d ? dateFmt.format(new Date(d)) : "—");
 
@@ -68,6 +69,12 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
 
         <section className="space-y-3 rounded-2xl border bg-card p-4">
           <h2 className="font-extrabold">Acciones</h2>
+          {seller.is_managed && ["paid", "in_delivery"].includes(o.status) && !openDispute && (
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-muted-foreground">Vendedor gestionado: entrega desde la bodega</p>
+              <ManagedOrderControls id={o.id} status={o.status} />
+            </div>
+          )}
           <OrderControls id={o.id} status={o.status} openDispute={openDispute} />
         </section>
 

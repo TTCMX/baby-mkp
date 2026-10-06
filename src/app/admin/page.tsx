@@ -17,16 +17,24 @@ export default async function AdminHome() {
 
   // Audit log read with the admin's own session (RLS: admins only).
   const supabase = await createClient();
-  const { data: log } = await supabase
-    .from("admin_audit_log")
-    .select("id, action, entity_type, entity_id, created_at, admin:profiles(display_name)")
-    .order("created_at", { ascending: false })
-    .limit(10);
+  const [{ data: log }, { count: managedToDeliver }] = await Promise.all([
+    supabase
+      .from("admin_audit_log")
+      .select("id, action, entity_type, entity_id, created_at, admin:profiles(display_name)")
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("orders")
+      .select("id, seller:profiles!orders_seller_id_fkey!inner(is_managed)", { count: "exact", head: true })
+      .eq("seller.is_managed", true)
+      .in("status", ["paid", "in_delivery"]),
+  ]);
 
   const alerts = [
     { n: m.pending_review, label: "productos por revisar", href: "/admin/listings?status=pending_review" },
     { n: m.open_disputes, label: "problemas reportados", href: "/admin/orders?disputed=1" },
     { n: m.pending_withdrawals, label: "retiros por pagar", href: "/admin/withdrawals" },
+    { n: managedToDeliver ?? 0, label: "ventas de gestionados por entregar", href: "/admin/orders?managed=1" },
   ].filter((a) => a.n > 0);
 
   return (
