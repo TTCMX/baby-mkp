@@ -148,7 +148,7 @@ async function storePhotos(db: Db, urls: string[], sellerId: string, listingId: 
       ] as const) {
         const { error } = await db.storage
           .from(LISTING_IMAGES_BUCKET)
-          .upload(p, body, { contentType: "image/webp", upsert: false });
+          .upload(p, body, { contentType: "image/webp", upsert: false, cacheControl: "31536000" });
         if (error) throw new Error(`No pudimos guardar la foto ${i + 1}`);
       }
       stored.push({ storage_path: path, width: photo.width, height: photo.height, source_url: url });

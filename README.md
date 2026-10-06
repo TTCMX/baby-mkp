@@ -145,8 +145,12 @@ supabase/
 - **SEO:** `sitemap.xml` (categorías + productos activos, cada hora), `robots.txt` que excluye rutas privadas,
   Open Graph del sitio (`src/app/opengraph-image.png`) y por producto, y datos estructurados `Product` en cada producto.
   Las URLs absolutas salen de `NEXT_PUBLIC_SITE_URL`: cámbiala al conectar el dominio propio.
-- **Sin `loading.tsx` global a propósito:** haría streaming de todas las páginas y los `notFound()`/`redirect()`
-  responderían 200 en vez de 404/307.
+- **Región:** las funciones de Vercel corren en `yul1` (Montreal), junto a Supabase (`ca-central-1`): cada consulta
+  a la base de datos es local. Si se cambia la región de Supabase, cambia `regions` en `vercel.json`.
+- **Carga instantánea:** las páginas que más se navegan (inicio, búsqueda, categoría, producto, perfil, pedidos,
+  saldo) tienen su propio `loading.tsx`: Next lo precarga y al tocar un enlace la pantalla cambia al momento.
+  No hay uno global a propósito: envolvería `/admin` y sus redirecciones. En esas páginas un `notFound()` responde
+  200 con `<meta name="robots" content="noindex">` (Google no lo indexa).
 
 ## Estado por etapas
 
