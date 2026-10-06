@@ -10,6 +10,9 @@ const settingsSchema = z.object({
   max_images_per_listing: z.number().int().min(1).max(20),
   default_currency: z.string().length(3),
   order_auto_complete_days: z.number().int().min(1).max(60).default(3),
+  withdrawal_min_cents: z.number().int().nonnegative().default(0),
+  managed_contact_email: z.string().default(""),
+  managed_contact_phone: z.string().default(""),
 });
 
 export type PlatformSettings = z.infer<typeof settingsSchema>;

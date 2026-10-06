@@ -4,26 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/features/profile/profile-form";
 import { signOut } from "@/features/auth/actions";
 import Link from "next/link";
-import { Baby, Package, ShoppingBag } from "lucide-react";
-import { isStripeConfigured } from "@/lib/stripe";
-import { PayoutsCard } from "@/features/payments/payouts-card";
-import { syncPayoutStatus, type PayoutStatus } from "@/features/payments/payout-account";
+import { Baby, ChevronRight, Package, ShoppingBag, Wallet } from "lucide-react";
+import { formatPrice } from "@/lib/money";
+import { getMyBalance } from "@/features/wallet/queries";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
 
-export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
+export default async function SettingsPage() {
   const user = await requireUser("/settings");
-  const { payouts } = await searchParams;
-  let payoutStatus: PayoutStatus | null = null;
-  if (isStripeConfigured()) {
-    try {
-      payoutStatus = await syncPayoutStatus(user.id);
-    } catch (err) {
-      console.error("[settings] payout status failed", err);
-    }
-  }
+  const balance = await getMyBalance(user.id);
   const supabase = await createClient();
   const { data: privateProfile } = await supabase
     .from("private_profiles")
@@ -37,6 +28,20 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
         <h1 className="text-2xl font-extrabold">Mi cuenta</h1>
         <p className="text-sm text-muted-foreground">{user.email}</p>
       </div>
+
+      <Link
+        href="/balance"
+        id="saldo"
+        className="flex items-center gap-3 rounded-2xl border bg-card p-4 hover:bg-muted"
+      >
+        <Wallet className="size-5 text-primary" />
+        <span className="flex-1">
+          <span className="block text-sm font-bold">Mi saldo</span>
+          <span className="text-xs text-muted-foreground">Úsalo para comprar o retíralo a tu cuenta</span>
+        </span>
+        <span className="text-lg font-extrabold">{formatPrice(balance)}</span>
+        <ChevronRight className="size-4 text-muted-foreground" />
+      </Link>
 
       <Link href="/babies" className={buttonVariants({ variant: "outline", className: "w-full justify-start" })}>
         <Baby /> Mis bebés
@@ -56,8 +61,6 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           Panel de administración
         </Link>
       )}
-
-      {payoutStatus && <PayoutsCard status={payoutStatus} error={payouts === "error"} />}
 
       <Card className="p-5">
         <ProfileForm profile={user.profile} phone={privateProfile?.phone ?? null} />

@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   "/admin",
   "/notifications",
   "/checkout",
+  "/balance",
 ];
 
 export function isProtectedPath(pathname: string) {

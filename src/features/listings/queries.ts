@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Category, Listing, Profile } from "@/lib/domain/types";
 
@@ -19,7 +20,7 @@ export type SellerSummary = Pick<
 > & { active_listings: number };
 
 export type ListingDetail = ListingWithImages & {
-  category: Pick<Category, "id" | "slug" | "name"> | null;
+  category: Pick<Category, "id" | "slug" | "name" | "age_mode"> | null;
   seller: SellerSummary;
 };
 
@@ -68,13 +69,16 @@ export async function getSellerSummary(userId: string): Promise<SellerSummary | 
   return profile ? { ...(profile as Omit<SellerSummary, "active_listings">), active_listings: count ?? 0 } : null;
 }
 
-/** Public listing page. Returns null when missing or not visible to the viewer (RLS). */
-export async function getListingDetail(id: string): Promise<ListingDetail | null> {
+/**
+ * Public listing page. Returns null when missing or not visible to the viewer (RLS).
+ * Cached per request: the page and its metadata share one lookup.
+ */
+export const getListingDetail = cache(async (id: string): Promise<ListingDetail | null> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("listings")
     .select(
-      "*, listing_images(storage_path, position, width, height), category:categories!listings_category_id_fkey(id, slug, name)",
+      "*, listing_images(storage_path, position, width, height), category:categories!listings_category_id_fkey(id, slug, name, age_mode)",
     )
     .eq("id", id)
     .maybeSingle<ListingWithImages & { category: ListingDetail["category"] }>();
@@ -83,7 +87,7 @@ export async function getListingDetail(id: string): Promise<ListingDetail | null
   const seller = await getSellerSummary(data.seller_id);
   if (!seller) return null;
   return { ...sortImages(data), seller };
-}
+});
 
 export async function getActiveCategories(): Promise<Category[]> {
   const supabase = await createClient();

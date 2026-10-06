@@ -32,7 +32,7 @@ export async function SiteHeader() {
 
         <HeaderNav />
 
-        <form action="/search" className="relative flex-1" role="search">
+        <form action="/search" className="relative flex-1" role="search" aria-label="Buscar en todo el sitio">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 md:left-4 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             name="q"
@@ -58,7 +58,7 @@ export async function SiteHeader() {
           </Link>
         )}
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav aria-label="Tu cuenta" className="hidden items-center gap-1 md:flex">
           {user?.profile.role === "admin" && (
             <Link href="/admin" className={buttonVariants({ variant: "ghost", size: "sm" })}>
               Admin

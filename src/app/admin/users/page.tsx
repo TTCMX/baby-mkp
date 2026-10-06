@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { formatPrice } from "@/lib/money";
 import { cleanText } from "@/features/catalog/filters";
 import { UserControls } from "@/features/admin/user-controls";
 
@@ -35,10 +36,12 @@ export default async function AdminUsers({ searchParams }: PageProps<"/admin/use
   const { data: users, count } = await query;
 
   const userIds = (users ?? []).map((u) => u.id);
-  const [{ data: privates }, { data: listingCounts }] = await Promise.all([
-    supabase.from("private_profiles").select("id, email, phone, payouts_enabled, stripe_account_id").in("id", userIds),
+  const [{ data: privates }, { data: listingCounts }, { data: wallets }] = await Promise.all([
+    supabase.from("private_profiles").select("id, email, phone").in("id", userIds),
     supabase.from("listings").select("seller_id").eq("status", "active").in("seller_id", userIds),
+    supabase.from("wallets").select("user_id, balance_cents").in("user_id", userIds),
   ]);
+  const balance = (id: string) => wallets?.find((w) => w.user_id === id)?.balance_cents ?? 0;
   const priv = new Map((privates ?? []).map((p) => [p.id, p]));
   const active = (id: string) => (listingCounts ?? []).filter((l) => l.seller_id === id).length;
 
@@ -52,7 +55,7 @@ export default async function AdminUsers({ searchParams }: PageProps<"/admin/use
           className="h-10 flex-1 rounded-full border border-input bg-card px-4 text-sm"
         />
       </form>
-      <nav className="flex gap-1.5 text-xs">
+      <nav aria-label="Filtrar por estado" className="flex gap-1.5 text-xs">
         <Link
           href="/admin/users"
           className={`rounded-full px-3 py-1 font-semibold ${!suspended ? "bg-foreground text-background" : "bg-muted"}`}
@@ -95,9 +98,7 @@ export default async function AdminUsers({ searchParams }: PageProps<"/admin/use
                     {u.rating_count ? `${Number(u.rating_avg).toFixed(1)} (${u.rating_count})` : "—"}
                   </span>
                   <span>{active(u.id)} en venta</span>
-                  <span>
-                    Cobros: {p?.payouts_enabled ? "activos" : p?.stripe_account_id ? "en proceso" : "sin configurar"}
-                  </span>
+                  <span>Saldo: {formatPrice(balance(u.id))}</span>
                   <span>Desde {monthFmt.format(new Date(u.created_at))}</span>
                 </p>
               </div>

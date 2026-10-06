@@ -4,9 +4,11 @@ import {
   DELIVERY_METHODS,
   LISTING_CONDITIONS,
   type AgeStage,
+  type CategoryAgeMode,
   type DeliveryMethod,
   type ListingCondition,
 } from "@/lib/domain/constants";
+import { formatAgeRange } from "@/lib/domain/age-mode";
 import { formatPrice } from "@/lib/money";
 import { ListingGallery, type GalleryImage } from "./listing-gallery";
 
@@ -19,6 +21,8 @@ export type ListingViewData = {
   brand: string | null;
   model: string | null;
   ageStages: AgeStage[];
+  /** How the category treats age; "range" shows one "Edad recomendada" chip. */
+  ageMode?: CategoryAgeMode;
   categoryName: string | null;
   isBundle: boolean;
   bundleItemCount: number | null;
@@ -62,9 +66,14 @@ export function ListingView({ data, actions }: { data: ListingViewData; actions?
         <ul className="flex flex-wrap gap-2 text-sm">
           <Chip strong>{LISTING_CONDITIONS[data.condition].label}</Chip>
           {data.isBundle && data.bundleItemCount && <Chip>Lote · {data.bundleItemCount} piezas</Chip>}
-          {data.ageStages.map((s) => (
-            <Chip key={s}>{AGE_STAGES[s]}</Chip>
-          ))}
+          {data.ageMode === "range" || data.ageStages.includes("all_ages") ? (
+            <Chip>
+              {data.ageMode === "range" && !data.ageStages.includes("all_ages") && "Edad recomendada: "}
+              {formatAgeRange(data.ageStages)}
+            </Chip>
+          ) : (
+            data.ageStages.map((s) => <Chip key={s}>{AGE_STAGES[s]}</Chip>)
+          )}
         </ul>
 
         {actions}

@@ -78,19 +78,26 @@ async function confirmPayment(session: Stripe.Checkout.Session) {
     return;
   }
 
-  if (result === "paid") {
-    const { data: order } = await admin
-      .from("orders")
-      .select("buyer_id, seller_id, listing_id, total_cents, platform_commission_cents")
-      .eq("id", orderId)
-      .single();
-    if (order) {
-      const props = { order_id: orderId, listing_id: order.listing_id, total_cents: order.total_cents };
-      await Promise.all([
-        track("payment_completed", order.buyer_id, props),
-        track("order_created", order.buyer_id, { ...props, commission_cents: order.platform_commission_cents }),
-        track("listing_sold", order.seller_id, props),
-      ]);
-    }
-  }
+  if (result === "paid") await trackOrderPaid(orderId);
+}
+
+/** Analytics for a newly paid order (card via webhook, or balance at checkout). */
+export async function trackOrderPaid(orderId: string) {
+  const { data: order } = await createAdminClient()
+    .from("orders")
+    .select("buyer_id, seller_id, listing_id, total_cents, platform_commission_cents, balance_applied_cents")
+    .eq("id", orderId)
+    .single();
+  if (!order) return;
+  const props = {
+    order_id: orderId,
+    listing_id: order.listing_id,
+    total_cents: order.total_cents,
+    balance_cents: order.balance_applied_cents,
+  };
+  await Promise.all([
+    track("payment_completed", order.buyer_id, props),
+    track("order_created", order.buyer_id, { ...props, commission_cents: order.platform_commission_cents }),
+    track("listing_sold", order.seller_id, props),
+  ]);
 }

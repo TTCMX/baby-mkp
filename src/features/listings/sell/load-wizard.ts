@@ -19,6 +19,7 @@ export async function loadWizardContext(user: SessionUser) {
       name: c.name,
       icon: c.icon,
       allows_shipping: c.allows_shipping,
+      age_mode: c.age_mode,
     })),
     brands,
     maxImages: settings.max_images_per_listing,

@@ -29,7 +29,7 @@ export function CatalogView({ title, filters, result, basePath, categories }: Pr
   return (
     <FiltersProvider>
       <div className="space-y-4">
-        <form action={basePath} role="search" className="relative">
+        <form action={basePath} role="search" aria-label="Buscar en los resultados" className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             name="q"

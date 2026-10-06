@@ -14,8 +14,7 @@ import { AutoRefresh } from "@/features/orders/auto-refresh";
 import { BuyerActions, ReviewForm, SellerActions } from "@/features/orders/order-actions";
 import { coverOf, getOrder, getOrderExtras } from "@/features/orders/queries";
 import { ORDER_STATUS } from "@/features/orders/status";
-import { getPayoutAccount } from "@/features/payments/payout-account";
-import { completeOrderIfDue } from "@/features/payments/payouts";
+import { completeOrderIfDue } from "@/features/orders/completion";
 
 export const metadata: Metadata = { title: "Pedido" };
 
@@ -24,13 +23,6 @@ const dateFmt = new Intl.DateTimeFormat("es-MX", {
   timeStyle: "short",
   timeZone: "America/Mexico_City",
 });
-
-const PAYOUT_STATUS: Record<string, string> = {
-  pending: "Pendiente: configura tus cobros para recibirlo",
-  in_transit: "En camino a tu cuenta",
-  paid: "Transferido a tu cuenta de Stripe",
-  failed: "Hubo un problema con la transferencia; lo reintentaremos",
-};
 
 export default async function OrderPage({ params, searchParams }: PageProps<"/orders/[id]">) {
   const { id } = await params;
@@ -54,11 +46,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
   const status = ORDER_STATUS[order.status];
   const cover = coverOf(order);
   const waitingWebhook = paid === "1" && order.status === "pending_payment";
-  const extras = await getOrderExtras(order, user.id);
-  const payoutAccount =
-    isSeller && !["cancelled", "refunded", "pending_payment"].includes(order.status)
-      ? await getPayoutAccount(user.id)
-      : null;
+  const extras = await getOrderExtras(order);
   const addr = order.shipping_address;
   const counterpartName = isSeller ? order.buyer_name : order.seller_name;
   const myReview = extras.reviews.find((r) => r.reviewer_id === user.id);
@@ -76,15 +64,6 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
       {paid === "1" && order.status === "paid" && !isSeller && (
         <div className="flex items-center gap-3 rounded-2xl bg-accent p-4 text-sm font-semibold text-accent-foreground">
           <CheckCircle2 className="size-5" /> ¡Listo! Tu pago está confirmado. Avisamos al vendedor.
-        </div>
-      )}
-      {payoutAccount && !payoutAccount.payouts_enabled && (
-        <div className="rounded-2xl border border-primary/40 bg-primary/5 p-4 text-sm">
-          <p className="font-bold">Configura tus cobros para recibir {formatPrice(order.seller_net_cents)}</p>
-          <p className="mt-1 text-muted-foreground">Guardamos tu dinero de forma segura hasta que lo configures.</p>
-          <Link href="/settings#cobros" className={buttonVariants({ size: "sm", className: "mt-3" })}>
-            Configurar cobros
-          </Link>
         </div>
       )}
       {order.disputed_at && (
@@ -206,19 +185,34 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
             />
             <div className="border-t pt-2">
               <Row
-                label={<b>{extras.payout?.status === "paid" ? "Recibiste" : "Recibirás"}</b>}
+                label={<b>{order.status === "completed" ? "Recibiste" : "Recibirás"}</b>}
                 value={<b>{formatPrice(order.seller_net_cents)}</b>}
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              {extras.payout
-                ? (PAYOUT_STATUS[extras.payout.status] ?? extras.payout.status)
-                : "Te transferimos cuando el comprador confirme que recibió el producto."}
+              {order.status === "completed" ? (
+                <>
+                  Ya está en tu saldo.{" "}
+                  <Link href="/balance" className="font-bold text-primary">
+                    Ver mi saldo
+                  </Link>
+                </>
+              ) : (
+                "Lo agregamos a tu saldo cuando el comprador confirme que recibió el producto. Desde ahí lo usas para comprar o lo retiras a tu cuenta."
+              )}
             </p>
           </>
         ) : (
           <div className="border-t pt-2">
             <Row label={<b>Total pagado</b>} value={<b>{formatPrice(order.total_cents)}</b>} />
+            {order.balance_applied_cents > 0 && (
+              <>
+                <Row label="Con tu saldo" value={formatPrice(order.balance_applied_cents)} />
+                {order.total_cents > order.balance_applied_cents && (
+                  <Row label="Con tarjeta" value={formatPrice(order.total_cents - order.balance_applied_cents)} />
+                )}
+              </>
+            )}
           </div>
         )}
       </section>

@@ -5,6 +5,7 @@ import { DELIVERY_METHODS, type DeliveryMethod, type OrderStatus } from "@/lib/d
 import { formatPrice } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
 import { AuditHistory } from "@/features/admin/audit-history";
+import { ManagedOrderControls } from "@/features/admin/managed-controls";
 import { OrderControls } from "@/features/admin/order-controls";
 import { ORDER_STATUS } from "@/features/orders/status";
 
@@ -20,11 +21,11 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
   const supabase = await createClient(); // admin session
-  const [{ data: o }, { data: payment }, { data: payout }] = await Promise.all([
+  const [{ data: o }, { data: payment }, { data: sale }] = await Promise.all([
     supabase
       .from("orders")
       .select(
-        "*, order_items(title), buyer:profiles!orders_buyer_id_fkey(username, display_name), seller:profiles!orders_seller_id_fkey(username, display_name)",
+        "*, order_items(title), buyer:profiles!orders_buyer_id_fkey(username, display_name), seller:profiles!orders_seller_id_fkey(username, display_name, is_managed)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -35,11 +36,11 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from("payouts").select("*").eq("order_id", id).neq("status", "cancelled").maybeSingle(),
+    supabase.from("wallet_entries").select("created_at").eq("order_id", id).eq("kind", "sale").maybeSingle(),
   ]);
   if (!o) notFound();
   const buyer = o.buyer as { username: string; display_name: string };
-  const seller = o.seller as { username: string; display_name: string };
+  const seller = o.seller as { username: string; display_name: string; is_managed: boolean };
   const openDispute = Boolean(o.disputed_at && !o.dispute_resolved_at);
   const t = (d: string | null) => (d ? dateFmt.format(new Date(d)) : "—");
 
@@ -68,6 +69,12 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
 
         <section className="space-y-3 rounded-2xl border bg-card p-4">
           <h2 className="font-extrabold">Acciones</h2>
+          {seller.is_managed && ["paid", "in_delivery"].includes(o.status) && !openDispute && (
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-muted-foreground">Vendedor gestionado: entrega desde la bodega</p>
+              <ManagedOrderControls id={o.id} status={o.status} />
+            </div>
+          )}
           <OrderControls id={o.id} status={o.status} openDispute={openDispute} />
         </section>
 
@@ -134,22 +141,9 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
                 </>
               )}
             </p>
+            {o.balance_applied_cents > 0 && <p>Pagado con saldo: {formatPrice(o.balance_applied_cents)}</p>}
             <p>
-              Payout al vendedor: {payout?.status ?? "aún no"}
-              {payout?.failure_reason && <span className="text-destructive"> · {payout.failure_reason}</span>}
-              {payout?.stripe_transfer_id && (
-                <>
-                  {" · "}
-                  <a
-                    className="text-primary"
-                    href={`${stripeBase()}/connect/transfers/${payout.stripe_transfer_id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    ver transferencia
-                  </a>
-                </>
-              )}
+              Saldo al vendedor: {sale ? `acreditado el ${t(sale.created_at)}` : "aún no (se acredita al completarse)"}
             </p>
           </div>
         </section>

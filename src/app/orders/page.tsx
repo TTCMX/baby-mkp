@@ -18,7 +18,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/orders">)
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <h1 className="text-2xl font-extrabold">Mis pedidos</h1>
-      <nav className="flex gap-2">
+      <nav aria-label="Compras o ventas" className="flex gap-2">
         {(
           [
             ["purchases", "Compras"],

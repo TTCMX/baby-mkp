@@ -185,7 +185,7 @@ function GrowInvite({ signedIn }: { signedIn: boolean }) {
       </div>
       <Link
         href={signedIn ? "/babies" : "/signup?next=/babies"}
-        className="flex h-11 shrink-0 items-center justify-center rounded-full bg-primary px-5 font-extrabold text-primary-foreground hover:bg-primary/90"
+        className="flex h-11 shrink-0 items-center justify-center rounded-full bg-primary px-5 font-extrabold text-primary-foreground hover:bg-primary-hover"
       >
         Agregar a mi bebé
       </Link>

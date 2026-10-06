@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import { Heart, MessageCircle, ShoppingBag } from "lucide-react";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { track } from "@/lib/analytics/server";
 import { formatPrice } from "@/lib/money";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { listingPhotoUrl } from "@/lib/storage";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { getListingDetail, type ListingDetail } from "@/features/listings/queries";
 import { ListingView, type ListingViewData } from "@/features/listings/listing-view";
@@ -24,7 +26,15 @@ export async function generateMetadata({ params }: PageProps<"/listing/[id]">): 
   return {
     title: `${listing.title} · ${formatPrice(listing.price_cents, listing.currency)}`,
     description: listing.description.slice(0, 160) || listing.title,
-    openGraph: cover ? { images: [listingPhotoUrl(cover.storage_path)] } : undefined,
+    alternates: { canonical: `/listing/${listing.id}` },
+    // Replaces the layout's openGraph object, so repeat the site-wide fields.
+    openGraph: {
+      siteName: SITE_NAME,
+      locale: "es_MX",
+      type: "website",
+      title: listing.title,
+      ...(cover && { images: [listingPhotoUrl(cover.storage_path)] }),
+    },
   };
 }
 
@@ -38,6 +48,7 @@ function toViewData(l: ListingDetail): ListingViewData {
     brand: l.brand,
     model: l.model,
     ageStages: l.age_stages,
+    ageMode: l.category?.age_mode,
     categoryName: l.category?.name ?? null,
     isBundle: l.listing_type === "bundle",
     bundleItemCount: l.bundle_item_count,
@@ -71,8 +82,10 @@ export default async function ListingPage({ params, searchParams }: PageProps<"/
 
   const isOwner = user?.id === listing.seller_id;
   if (!isOwner && listing.status === "active") {
-    const supabase = await createClient();
-    await supabase.rpc("record_listing_view", { p_listing_id: listing.id });
+    // Counted after the response so the page never waits for it (owners are excluded above).
+    after(async () => {
+      await createPublicClient().rpc("record_listing_view", { p_listing_id: listing.id });
+    });
     await track("listing_viewed", user?.id ?? "anonymous", {
       listing_id: listing.id,
       category: listing.category?.slug,
@@ -83,6 +96,11 @@ export default async function ListingPage({ params, searchParams }: PageProps<"/
 
   return (
     <div className="space-y-4">
+      <script
+        type="application/ld+json"
+        // Escape "<" so listing text can never close the script tag.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd(listing)).replace(/</g, "\\u003c") }}
+      />
       {isOwner && published === "1" && listing.status === "active" && (
         <p className="rounded-2xl bg-accent p-4 text-sm font-semibold text-accent-foreground">
           🎉 ¡Tu producto ya está publicado! Comparte el enlace para venderlo más rápido.
@@ -113,6 +131,28 @@ export default async function ListingPage({ params, searchParams }: PageProps<"/
       />
     </div>
   );
+}
+
+/** schema.org Product, so search engines can show price and availability. */
+function productJsonLd(l: ListingDetail) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: l.title,
+    description: l.description || l.title,
+    image: l.listing_images.map((i) => listingPhotoUrl(i.storage_path)),
+    ...(l.brand && { brand: { "@type": "Brand", name: l.brand } }),
+    ...(l.category && { category: l.category.name }),
+    offers: {
+      "@type": "Offer",
+      url: `${SITE_URL}/listing/${l.id}`,
+      price: (l.price_cents / 100).toFixed(2),
+      priceCurrency: l.currency,
+      itemCondition:
+        l.condition === "new_with_tags" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
+      availability: l.status === "active" ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+    },
+  };
 }
 
 function BuyerActions({ listingId, status }: { listingId: string; status: ListingDetail["status"] }) {

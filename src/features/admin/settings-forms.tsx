@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CATEGORY_AGE_MODES, keysOf, type CategoryAgeMode } from "@/lib/domain/constants";
 import { saveCategory, updatePlatformSettings, type AdminResult } from "./actions";
 
 function Message({ state }: { state?: AdminResult }) {
@@ -18,6 +19,7 @@ type Settings = {
   concierge_min_price_cents: number;
   max_images_per_listing: number;
   order_auto_complete_days: number;
+  withdrawal_min_cents: number;
   listings_require_review: boolean;
 };
 
@@ -54,6 +56,12 @@ export function SettingsForm({ s }: { s: Settings }) {
           label="Días para completar tras 'entregado'"
           name="order_auto_complete_days"
           value={s.order_auto_complete_days}
+          step="1"
+        />
+        <Field
+          label="Retiro mínimo de saldo (MXN, 0 = sin mínimo)"
+          name="withdrawal_min"
+          value={s.withdrawal_min_cents / 100}
           step="1"
         />
       </div>
@@ -95,12 +103,13 @@ type Category = {
   sort_order: number;
   is_active: boolean;
   allows_shipping: boolean;
+  age_mode: CategoryAgeMode;
 };
 
 export function CategoryForm({ c }: { c?: Category }) {
   const [state, action, pending] = useActionState(saveCategory, undefined);
   return (
-    <form action={action} className="grid gap-2 sm:grid-cols-[1fr_1fr_7rem_5rem_auto] sm:items-end">
+    <form action={action} className="grid gap-2 sm:grid-cols-[1fr_1fr_7rem_5rem_8rem_auto] sm:items-end">
       <input type="hidden" name="id" value={c?.id ?? ""} />
       <div className="space-y-1">
         <Label className="text-xs">Nombre</Label>
@@ -118,6 +127,21 @@ export function CategoryForm({ c }: { c?: Category }) {
         <Label className="text-xs">Orden</Label>
         <Input name="sort_order" type="number" defaultValue={c?.sort_order ?? 100} />
       </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Edad</Label>
+        <select
+          name="age_mode"
+          aria-label="Relación con la edad"
+          defaultValue={c?.age_mode ?? "exact"}
+          className="h-11 w-full rounded-xl border border-input bg-card px-3 text-base md:text-sm"
+        >
+          {keysOf(CATEGORY_AGE_MODES).map((m) => (
+            <option key={m} value={m} title={CATEGORY_AGE_MODES[m].hint}>
+              {CATEGORY_AGE_MODES[m].label}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="flex flex-wrap items-center gap-3 text-xs sm:pb-2">
         <label className="flex items-center gap-1.5">
           <input type="checkbox" name="is_active" value="on" defaultChecked={c?.is_active ?? true} /> Activa
@@ -130,7 +154,7 @@ export function CategoryForm({ c }: { c?: Category }) {
           {c ? "Guardar" : "Crear"}
         </Button>
       </div>
-      <div className="sm:col-span-5">
+      <div className="sm:col-span-6">
         <Message state={state} />
       </div>
     </form>

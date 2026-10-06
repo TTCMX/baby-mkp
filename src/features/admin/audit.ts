@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function logAdminAction(
   adminId: string,
   action: string,
-  entityType: "listing" | "user" | "order" | "setting" | "category",
+  entityType: "listing" | "user" | "order" | "setting" | "category" | "withdrawal",
   entityId: string,
   details: Record<string, unknown> = {},
 ) {

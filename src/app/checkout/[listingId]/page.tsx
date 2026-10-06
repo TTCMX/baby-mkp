@@ -11,6 +11,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { CheckoutForm, type SavedAddress } from "@/features/checkout/checkout-form";
 import { releaseCheckout } from "@/features/checkout/release";
 import { getListingDetail } from "@/features/listings/queries";
+import { getMyBalance } from "@/features/wallet/queries";
 
 export const metadata: Metadata = { title: "Comprar" };
 
@@ -36,6 +37,7 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<"
           : null;
 
   const supabase = await createClient();
+  const balanceCents = await getMyBalance(user.id);
   const { data: address } = await supabase
     .from("addresses")
     .select("*")
@@ -101,6 +103,7 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<"
           deliveryMethods={listing.delivery_methods}
           sellerLocation={[listing.municipality, listing.city].filter(Boolean).join(", ")}
           savedAddress={savedAddress}
+          balanceCents={balanceCents}
         />
       )}
     </div>

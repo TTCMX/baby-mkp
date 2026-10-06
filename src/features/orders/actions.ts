@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { processPayout, trackCompletion } from "@/features/payments/payouts";
+import { trackCompletion } from "./completion";
 
 export type OrderActionResult = { error?: string };
 
@@ -51,10 +51,7 @@ export async function markDelivered(orderId: string) {
 
 export async function confirmReceived(orderId: string) {
   const result = await call("order_confirm_received", { p_order_id: orderId }, orderId);
-  if (!result.error) {
-    await trackCompletion(orderId);
-    await processPayout(orderId);
-  }
+  if (!result.error) await trackCompletion(orderId);
   return result;
 }
 
