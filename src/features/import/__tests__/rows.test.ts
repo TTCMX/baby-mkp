@@ -81,6 +81,11 @@ describe("mapping what people type", () => {
     ["4+", "4y_plus"],
     ["+4 años", "4y_plus"],
     ["Todas las edades", "all_ages"],
+    ["1-3 meses", "0_3m"],
+    ["1 año", "1_2y"],
+    ["2 años", "2_4y"],
+    ["3 años", "2_4y"],
+    ["4 años", "4y_plus"],
     ["embarazo", "pregnancy"],
   ])("age %s → %s", (token, stage) => {
     expect(matchAgeToken(token)).toBe(stage);
@@ -107,6 +112,14 @@ describe("mapping what people type", () => {
       invalid: [],
     });
     expect(parsePhotoUrls("foto.jpg ftp://x/y.jpg").invalid).toEqual(["foto.jpg", "ftp://x/y.jpg"]);
+  });
+
+  it("prices with decimal comma or thousands separator", async () => {
+    const { normalizePrice } = await import("../rows");
+    expect(normalizePrice("316,00")).toBe("316.00");
+    expect(normalizePrice("$1,500.00")).toBe("1,500.00"); // thousands comma: parsePriceToCents drops it
+    expect(normalizePrice("1500 MXN")).toBe("1500");
+    expect(normalizePrice("1,500")).toBe("1,500");
   });
 
   it("public name keeps only first name + initial", () => {
