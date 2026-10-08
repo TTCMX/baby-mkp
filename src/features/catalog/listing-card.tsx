@@ -28,9 +28,9 @@ export function ListingCard({ listing }: { listing: ListingCardData }) {
             <ImageOff className="size-8" />
           </div>
         )}
-        {listing.status === "reserved" && (
+        {(listing.status === "reserved" || listing.status === "sold") && (
           <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-bold">
-            Reservado
+            {listing.status === "sold" ? "Vendido" : "Reservado"}
           </span>
         )}
       </div>
