@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Doc, H2, List, Setting } from "@/features/legal/doc";
+import { Contact, Doc, H2, List } from "@/features/legal/doc";
 import { getPlatformSettings } from "@/lib/settings";
 import { SITE_NAME } from "@/lib/site";
 
@@ -12,13 +12,13 @@ export const metadata: Metadata = {
 
 export default async function PrivacyPage() {
   const s = await getPlatformSettings();
-  const contact = <Setting value={s.support_email} missing="correo de atención por definir" />;
+  const contact = <Contact email={s.support_email} />;
 
   return (
     <Doc title="Aviso de privacidad" updated="8 de octubre de 2026">
       <p>
-        <Setting value={s.legal_name} missing="responsable por definir" />, con domicilio en{" "}
-        <Setting value={s.legal_address} missing="domicilio por definir" />, es responsable del tratamiento de tus datos
+        {s.legal_name || SITE_NAME}
+        {s.legal_address && `, con domicilio en ${s.legal_address},`} es responsable del tratamiento de tus datos
         personales en {SITE_NAME}, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los
         Particulares y su reglamento.
       </p>
@@ -63,7 +63,10 @@ export default async function PrivacyPage() {
         <li>Medir cómo se usa el sitio para mejorarlo.</li>
         <li>Recomendarte productos según la etapa de tus bebés.</li>
       </List>
-      <p>Para negarte a las finalidades secundarias escríbenos a {contact}.</p>
+      <p>
+        Para negarte a las finalidades secundarias escríbenos{s.support_email ? " a " : " desde "}
+        {contact}.
+      </p>
 
       <H2>Con quién los compartimos</H2>
       <p>
@@ -83,9 +86,10 @@ export default async function PrivacyPage() {
       <p>
         Puedes acceder a tus datos, rectificarlos, cancelarlos u oponerte a su uso, así como revocar tu consentimiento o
         limitar su uso. Muchos los puedes cambiar tú mismo en <Link href="/settings">tu cuenta</Link>. Para lo demás,
-        escríbenos a {contact} con tu nombre, el correo de tu cuenta, lo que pides y, si es el caso, el dato a corregir.
-        Te responderemos en un máximo de 20 días hábiles y, si procede, lo haremos efectivo dentro de los 15 días
-        hábiles siguientes. Conservamos algunos datos de compras y pagos el tiempo que exigen las leyes fiscales.
+        escríbenos{s.support_email ? " a " : " desde "}
+        {contact} con tu nombre, el correo de tu cuenta, lo que pides y, si es el caso, el dato a corregir. Te
+        responderemos en un máximo de 20 días hábiles y, si procede, lo haremos efectivo dentro de los 15 días hábiles
+        siguientes. Conservamos algunos datos de compras y pagos el tiempo que exigen las leyes fiscales.
       </p>
 
       <H2>Cambios a este aviso</H2>

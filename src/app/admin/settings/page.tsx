@@ -18,8 +18,8 @@ export default async function AdminSettings() {
       <section className="space-y-3 rounded-2xl border bg-card p-5">
         <h2 className="font-extrabold">Datos legales y contacto</h2>
         <p className="text-xs text-muted-foreground">
-          Aparecen en Términos y condiciones, Aviso de privacidad y Ayuda. Mientras falten, esas páginas muestran
-          &quot;por definir&quot;.
+          Aparecen en Términos y condiciones, Aviso de privacidad y Ayuda. Mientras falten, el responsable es
+          &quot;mercadito.baby&quot; y lo demás no se muestra.
         </p>
         <LegalForm s={settings} />
       </section>

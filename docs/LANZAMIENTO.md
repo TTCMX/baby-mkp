@@ -58,7 +58,7 @@ Los avisos que no se alcanzan a enviar se reintentan en el job diario (`/api/cro
 En `/admin/settings`:
 
 - **Datos legales y contacto**: responsable (tu nombre o razón social), domicilio, correo de atención y WhatsApp.
-  Aparecen en `/terminos`, `/privacidad` y `/ayuda`; mientras falten se ve "[por definir]".
+  Aparecen en `/terminos`, `/privacidad` y `/ayuda`; mientras falten, el responsable es "mercadito.baby" y lo demás se omite.
 - **Plataforma**: comisión, días para completar, retiro mínimo.
 - **Categorías**: para el lanzamiento solo _Ropa_ está activa.
 
