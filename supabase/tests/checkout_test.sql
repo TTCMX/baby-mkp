@@ -49,7 +49,7 @@ select pg_temp.expect_error($$select public.create_checkout_order('40000000-0000
 -- Happy path: reserve with shipping
 create temp table t (order_id uuid);
 insert into t select public.create_checkout_order('40000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000000b1',
-  'shipping', '{"street":"Av. 1","city":"CDMX","postal_code":"04000"}', 450000, 15000, 10, 45000, 420000);
+  'shipping', '{"street":"Av. 1","city":"CDMX","postal_code":"04000"}', 450000, 15000, 10, 45000, 405000);
 select pg_temp.assert((select status from public.listings where id = '40000000-0000-0000-0000-000000000001') = 'reserved', 'listing reserved');
 select pg_temp.assert((select total_cents from public.orders where id = (select order_id from t)) = 465000, 'total includes shipping');
 select pg_temp.assert((select count(*) from public.order_items where order_id = (select order_id from t)) = 1, 'order item');
@@ -62,7 +62,8 @@ select pg_temp.expect_error($$select public.mark_order_paid((select order_id fro
 select pg_temp.assert(public.mark_order_paid((select order_id from t), 'pi_1', 'ch_1', 465000, 1850) = 'paid', 'paid');
 select pg_temp.assert(public.mark_order_paid((select order_id from t), 'pi_1', 'ch_1', 465000, 1850) = 'already_paid', 'duplicate webhook');
 select pg_temp.assert((select status from public.listings where id = '40000000-0000-0000-0000-000000000001') = 'sold', 'listing sold');
-select pg_temp.assert((select platform_net_cents from public.orders where id = (select order_id from t)) = 45000 - 1850, 'platform net after fee');
+select pg_temp.assert((select seller_net_cents from public.orders where id = (select order_id from t)) = 405000, 'shipping is not the seller''s');
+select pg_temp.assert((select platform_net_cents from public.orders where id = (select order_id from t)) = 45000 + 15000 - 1850, 'platform net: commission + shipping − fee');
 select pg_temp.assert((select count(*) from public.payments where stripe_payment_intent_id = 'pi_1' and status = 'succeeded') = 1, 'payment row');
 select pg_temp.assert((select count(*) from public.notifications where data ->> 'order_id' = (select order_id from t)::text) = 2, 'notifications');
 select pg_temp.assert(public.cancel_pending_order((select order_id from t)) = false, 'paid order cannot be cancelled as pending');

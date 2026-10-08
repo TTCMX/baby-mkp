@@ -71,8 +71,8 @@ export default async function HelpPage() {
         </Q>
         <Q q="¿Cuánto cobran?">
           <p>
-            Publicar es gratis. Cuando vendes, cobramos el {s.platform_commission_percentage}% del precio del producto;
-            el envío que paga el comprador es completo para ti.
+            Publicar es gratis. Cuando vendes, cobramos el {s.platform_commission_percentage}% del precio del producto.
+            Lo que paga el comprador por el envío cubre la guía y no entra a tu saldo.
           </p>
         </Q>
         <Q q="¿Cuándo recibo mi dinero?">

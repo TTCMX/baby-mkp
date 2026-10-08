@@ -52,7 +52,7 @@ export default async function TermsPage() {
         </li>
         <li>
           Cobramos una comisión del {s.platform_commission_percentage}% sobre el precio de cada venta, que se descuenta
-          antes de abonar tu saldo. El costo de envío que pagó el comprador no causa comisión.
+          antes de abonar tu saldo. Lo que paga el comprador por el envío es para cubrir la guía: no entra a tu saldo.
         </li>
         <li>Podemos revisar, pedir cambios o retirar publicaciones que no cumplan estas reglas.</li>
       </List>

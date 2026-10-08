@@ -128,6 +128,8 @@ supabase/
 - **Dinero en centavos (enteros).** Comisiones en `platform_settings`, nunca hardcodeadas
   (`platform_commission_percentage`, `concierge_commission_percentage`, `concierge_min_price_cents`).
   Las órdenes guardan un _snapshot_ del desglose: precio, envío, comisión, fees de pago, neto vendedor, neto plataforma.
+  El envío es de la plataforma (envía y paga las guías): neto vendedor = precio − comisión; neto plataforma =
+  comisión + envío − fee de Stripe.
   El cálculo vive en `src/lib/pricing.ts` (con tests).
 - **Público vs privado por tabla.** `profiles` es público; email, teléfono, Stripe y direcciones viven en
   `private_profiles` / `addresses`, visibles solo para el dueño (y admin).

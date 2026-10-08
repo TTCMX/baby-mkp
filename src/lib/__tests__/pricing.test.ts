@@ -12,11 +12,17 @@ describe("computeOrderAmounts", () => {
     });
   });
 
-  it("passes shipping through to the seller and never takes commission on it", () => {
-    const r = computeOrderAmounts({ itemPriceCents: 100_000, shippingCents: 15_000, commissionPercentage: 12 });
+  it("keeps shipping for the platform (it pays the label) and never takes commission on it", () => {
+    const r = computeOrderAmounts({
+      itemPriceCents: 100_000,
+      shippingCents: 15_000,
+      commissionPercentage: 12,
+      paymentFeeCents: 4_000,
+    });
     expect(r.totalCents).toBe(115_000);
     expect(r.platformCommissionCents).toBe(12_000);
-    expect(r.sellerNetCents).toBe(103_000);
+    expect(r.sellerNetCents).toBe(88_000);
+    expect(r.platformNetCents).toBe(12_000 + 15_000 - 4_000);
   });
 
   it("subtracts payment fees from the platform net only", () => {
@@ -32,11 +38,12 @@ describe("computeOrderAmounts", () => {
     );
   });
 
-  it("always balances: total = seller net + commission", () => {
+  it("always balances: total = seller net + commission + shipping", () => {
     for (const price of [1_000, 12_345, 500_000, 9_999_999]) {
       for (const pct of [0, 8, 10, 15.5, 25]) {
         const r = computeOrderAmounts({ itemPriceCents: price, shippingCents: 9_900, commissionPercentage: pct });
-        expect(r.sellerNetCents + r.platformCommissionCents).toBe(r.totalCents);
+        expect(r.sellerNetCents + r.platformCommissionCents + r.shippingCents).toBe(r.totalCents);
+        expect(r.sellerNetCents + r.platformNetCents).toBe(r.totalCents);
       }
     }
   });
