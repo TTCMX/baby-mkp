@@ -23,10 +23,11 @@ insert into auth.users (id, email) values
 
 set local role authenticated;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000e1');
-insert into public.babies (user_id, name, birth_date, color) values (auth.uid(), 'Emilia', current_date - 200, 'pink');
+insert into public.babies (user_id, name, birth_date, color, gender) values (auth.uid(), 'Emilia', current_date - 200, 'pink', 'girl');
 insert into public.babies (user_id, name, due_date) values (auth.uid(), 'Bebé', current_date + 90);
 select pg_temp.expect_error($$insert into public.babies (user_id, name, birth_date, due_date) values (auth.uid(), 'X', current_date, current_date + 1)$$, 'babies_one_date');
 select pg_temp.expect_error($$insert into public.babies (user_id, name) values (auth.uid(), 'X')$$, 'babies_one_date');
+select pg_temp.expect_error($$insert into public.babies (user_id, name, birth_date, gender) values (auth.uid(), 'X', current_date, 'unisex')$$, 'babies_gender_check');
 select pg_temp.expect_error($$insert into public.babies (user_id, name, birth_date) values (auth.uid(), 'X', current_date + 1)$$, 'babies_birth_not_future');
 select pg_temp.expect_error($$insert into public.babies (user_id, name, birth_date) values ('00000000-0000-0000-0000-0000000000e2', 'Hack', current_date)$$, 'row-level security');
 select pg_temp.assert((select count(*) from public.babies) = 2, 'parent sees own babies');

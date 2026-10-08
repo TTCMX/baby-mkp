@@ -14,6 +14,7 @@ export type BabyRow = {
   birth_date: string | null;
   due_date: string | null;
   color: keyof typeof BABY_COLORS;
+  gender: "girl" | "boy" | null;
   ageLabel: string;
   stageLabel: string;
 };
@@ -39,6 +40,7 @@ export function BabyList({ babies, today }: { babies: BabyRow[]; today: string }
               <p className="truncate font-extrabold">{b.name}</p>
               <p className="text-sm text-muted-foreground">
                 {b.ageLabel} · {b.stageLabel}
+                {b.gender && ` · ${b.gender === "girl" ? "Niña" : "Niño"}`}
               </p>
             </div>
             <Button
