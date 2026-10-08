@@ -75,26 +75,29 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      <section aria-labelledby="categories-heading" className="flex flex-col gap-3">
-        <h2 id="categories-heading" className="text-[22px] font-semibold md:text-[26px]">
-          Categorías
-        </h2>
-        <ul className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-5 md:px-0">
-          {categories.map((c) => (
-            <li key={c.id} className="shrink-0">
-              <Link
-                href={`/category/${c.slug}`}
-                className="flex w-20 flex-col items-center gap-1.5 text-center text-xs font-bold md:w-auto md:flex-row md:gap-3 md:rounded-[22px] md:border-[1.5px] md:bg-card md:p-3 md:text-left md:text-sm md:hover:border-sky-soft"
-              >
-                <span className="flex size-14 items-center justify-center rounded-2xl bg-sky-wash md:size-11">
-                  <CategoryIcon icon={c.icon} className="size-6 text-primary md:size-5" />
-                </span>
-                <span className="leading-tight">{c.name}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* A single category (launch: clothes only) needs no picker. */}
+      {categories.length > 1 && (
+        <section aria-labelledby="categories-heading" className="flex flex-col gap-3">
+          <h2 id="categories-heading" className="text-[22px] font-semibold md:text-[26px]">
+            Categorías
+          </h2>
+          <ul className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-5 md:px-0">
+            {categories.map((c) => (
+              <li key={c.id} className="shrink-0">
+                <Link
+                  href={`/category/${c.slug}`}
+                  className="flex w-20 flex-col items-center gap-1.5 text-center text-xs font-bold md:w-auto md:flex-row md:gap-3 md:rounded-[22px] md:border-[1.5px] md:bg-card md:p-3 md:text-left md:text-sm md:hover:border-sky-soft"
+                >
+                  <span className="flex size-14 items-center justify-center rounded-2xl bg-sky-wash md:size-11">
+                    <CategoryIcon icon={c.icon} className="size-6 text-primary md:size-5" />
+                  </span>
+                  <span className="leading-tight">{c.name}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {latest.length === 0 ? (
         <div className="rounded-[22px] border-[1.5px] border-dashed p-8 text-center text-sm text-muted-foreground">

@@ -1,5 +1,7 @@
 -- Listing gender: searchable, and sellers can set it on their own listings.
 begin;
+-- Fixtures use every category; production launches with only some turned on.
+update public.categories set is_active = true;
 
 create function pg_temp.assert(cond boolean, msg text) returns void language plpgsql as $$
 begin

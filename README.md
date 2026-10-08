@@ -134,6 +134,9 @@ supabase/
   la edad y se guarda como "Todas las edades" (lo fuerza un trigger); _Orientativa_ (juguetes, zapatos, carriolas…)
   pide un rango "desde – hasta" que se guarda como etapas contiguas; _Exacta_ (ropa) pide etapas puntuales.
   Filtrar por etapa incluye los productos "Todas las edades", después de los de esa etapa (`listings.is_all_ages`).
+- **Categorías activas:** apagar una categoría (Admin → Ajustes) oculta también sus productos (RLS de `listings`):
+  salen de búsqueda, inicio, perfiles y su página da 404. Su vendedor, su comprador y los admins los siguen viendo.
+  Lanzamiento: solo **Ropa** encendida; con una sola categoría el inicio no muestra el selector y "Vender" ya la trae elegida.
   Lógica en `src/lib/domain/age-mode.ts` (con tests).
 - **Género (`listings.gender`: niña / niño / unisex, opcional):** se elige al vender y se importa; el filtro "Niña"
   o "Niño" incluye también lo unisex. La búsqueda de texto no distingue niña/niño (el stemmer español los une): para
@@ -188,6 +191,9 @@ supabase/
       La app calcula su etapa (Embarazo, RN = primer mes, 0–3 meses, …) con fechas de calendario (`src/features/babies/stages.ts`, con tests) y el inicio muestra:
       selector de bebés, línea de tiempo de etapas, "Le queda chico" (vender lo de la etapa anterior con la edad
       preseleccionada), más productos de su etapa actual. Base del futuro Baby Closet.
-- [ ] 10. P1: favoritos, chat, wishlist, IA para listings, concierge
+      Con su género (Niña / Niño / Todos) el feed filtra solo (niña → niña + unisex + sin género), y en Embarazo
+      muestra Embarazo + RN (lo que se compra antes del parto).
+- [x] **Favoritos:** "Guardar" en el producto (al instante; visitantes → iniciar sesión) y "Mis favoritos".
+- [ ] 10. P1: chat, wishlist, IA para listings, concierge
 
 Las rutas de etapas futuras (`/sell/new`, `/search`, `/listing/[id]`, …) existen como placeholders.
