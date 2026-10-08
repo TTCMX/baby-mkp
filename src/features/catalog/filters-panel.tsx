@@ -126,6 +126,28 @@ export function FiltersPanel({ filters, basePath, categories }: Props) {
           </div>
         </Group>
 
+        <Group title="¿Para quién?">
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["", "Todos"],
+                ["girl", "Niña"],
+                ["boy", "Niño"],
+              ] as const
+            ).map(([value, label]) => (
+              <CheckPill
+                key={value || "all"}
+                type="radio"
+                name="gender"
+                value={value}
+                defaultChecked={(filters.gender ?? "") === value}
+              >
+                {label}
+              </CheckPill>
+            ))}
+          </div>
+        </Group>
+
         <Group title="Condición">
           <div className="flex flex-wrap gap-2">
             {keysOf(LISTING_CONDITIONS).map((c) => (

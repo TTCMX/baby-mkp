@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AGE_STAGES, DELIVERY_METHODS, LISTING_CONDITIONS, keysOf } from "@/lib/domain/constants";
+import { AGE_STAGES, DELIVERY_METHODS, LISTING_CONDITIONS, LISTING_GENDERS, keysOf } from "@/lib/domain/constants";
 
 // Shared by the sell wizard (instant feedback) and the server action (authority).
 
@@ -11,6 +11,7 @@ const conditionKeys = keysOf(LISTING_CONDITIONS) as [
   ...(keyof typeof LISTING_CONDITIONS)[],
 ];
 const ageKeys = keysOf(AGE_STAGES) as [keyof typeof AGE_STAGES, ...(keyof typeof AGE_STAGES)[]];
+const genderKeys = keysOf(LISTING_GENDERS) as [keyof typeof LISTING_GENDERS, ...(keyof typeof LISTING_GENDERS)[]];
 const deliveryKeys = keysOf(DELIVERY_METHODS) as [keyof typeof DELIVERY_METHODS, ...(keyof typeof DELIVERY_METHODS)[]];
 
 const optionalText = (max: number) =>
@@ -36,6 +37,7 @@ export const listingInputSchema = z
     model: optionalText(80),
     condition: z.enum(conditionKeys, "Elige la condición"),
     ageStages: z.array(z.enum(ageKeys)).min(1, "Elige al menos una edad o etapa"),
+    gender: z.enum(genderKeys).nullable().default(null),
     isBundle: z.boolean(),
     bundleItemCount: z.number().int().min(2).max(500).nullable(),
     priceCents: z

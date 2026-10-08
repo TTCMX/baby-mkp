@@ -69,7 +69,7 @@ Importar productos**.
 
 1. Sube un CSV (plantilla descargable; Excel en español con `;` también funciona). Columnas: `id_producto`,
    `vendedor_id`, `vendedor_nombre` (+ `vendedor_alias`, `vendedor_email`, `vendedor_telefono` opcionales), `titulo`,
-   `descripcion`, `categoria`, `condicion`, `edad`, `precio`, `marca`, `modelo`, `fotos` (enlaces), `piezas`.
+   `descripcion`, `categoria`, `condicion`, `edad`, `genero` (F/M, niña/niño, unisex; opcional), `precio`, `marca`, `modelo`, `fotos` (enlaces), `piezas`.
    Acepta sinónimos ("carreola", "como nuevo", "0 a 3 meses", "RN a 2-4 años") y enlaces compartidos de Drive/Dropbox.
 2. Revisión en el navegador antes de guardar nada: errores por fila, descargables.
 3. Ubicación y formas de entrega de la bodega (aplican a todo el archivo).
@@ -135,6 +135,9 @@ supabase/
   pide un rango "desde – hasta" que se guarda como etapas contiguas; _Exacta_ (ropa) pide etapas puntuales.
   Filtrar por etapa incluye los productos "Todas las edades", después de los de esa etapa (`listings.is_all_ages`).
   Lógica en `src/lib/domain/age-mode.ts` (con tests).
+- **Género (`listings.gender`: niña / niño / unisex, opcional):** se elige al vender y se importa; el filtro "Niña"
+  o "Niño" incluye también lo unisex. La búsqueda de texto no distingue niña/niño (el stemmer español los une): para
+  eso está el filtro.
 - **Búsqueda:** PostgreSQL Full Text Search en español sin acentos (`es_unaccent`), con pesos
   título/marca/modelo > categoría > descripción.
 - **Storage:** buckets `listing-images` (10 MB) y `avatars` (2 MB), solo JPEG/PNG/WebP, escritura solo en la carpeta propia.

@@ -41,6 +41,7 @@ export default async function AdminListing({ params }: PageProps<"/admin/listing
           priceCents={l.price_cents}
           categoryId={l.category_id}
           condition={l.condition}
+          gender={l.gender}
           categories={categories ?? []}
         />
       </section>

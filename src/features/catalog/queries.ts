@@ -112,6 +112,7 @@ export async function searchListings(f: CatalogFilters): Promise<SearchResult> {
   // A stage filter also matches "all ages" listings (furniture, accessories…), listed after the stage's own.
   const byStage = f.ages.length > 0 && !f.ages.includes("all_ages");
   if (f.ages.length) query = query.overlaps("age_stages", byStage ? [...f.ages, "all_ages"] : f.ages);
+  if (f.gender) query = query.in("gender", [f.gender, "unisex"]);
   if (f.delivery.length) query = query.overlaps("delivery_methods", f.delivery);
   const location = normalizeLocation(f.city);
   if (location) query = query.ilike("location_text", `%${location}%`);

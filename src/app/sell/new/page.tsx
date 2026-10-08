@@ -31,6 +31,7 @@ export default async function NewListingPage({ searchParams }: PageProps<"/sell/
         model: "",
         condition: "",
         ageStages: presetAge,
+        gender: "",
         isBundle: false,
         bundleItemCount: "",
         price: "",

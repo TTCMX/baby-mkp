@@ -234,6 +234,7 @@ async function importRow(
     model: row.model,
     condition: row.condition,
     age_stages: row.ageStages,
+    gender: row.gender,
     listing_type: row.bundleItemCount ? "bundle" : "single",
     bundle_item_count: row.bundleItemCount,
     price_cents: row.priceCents,

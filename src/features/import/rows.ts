@@ -1,7 +1,7 @@
 // Spreadsheet rows → listings of managed sellers. Pure (no I/O): used by the
 // admin importer in the browser (instant report) and by the import API (authority).
 import { normalizeAgeStages } from "@/lib/domain/age-mode";
-import { type AgeStage, type CategoryAgeMode, type ListingCondition } from "@/lib/domain/constants";
+import { type AgeStage, type CategoryAgeMode, type ListingCondition, type ListingGender } from "@/lib/domain/constants";
 import { parsePriceToCents } from "@/lib/money";
 import { MAX_PRICE_CENTS, MIN_PRICE_CENTS } from "@/features/listings/schema";
 
@@ -30,6 +30,7 @@ export type ImportRow = {
   categoryId: string;
   condition: ListingCondition;
   ageStages: AgeStage[];
+  gender: ListingGender | null;
   priceCents: number;
   brand: string | null;
   model: string | null;
@@ -52,6 +53,7 @@ export const COLUMNS = {
   category: ["categoria"],
   condition: ["condicion", "estado"],
   ages: ["edad", "edades", "etapa", "etapas"],
+  gender: ["genero", "sexo", "para"],
   price: ["precio"],
   brand: ["marca"],
   model: ["modelo"],
@@ -61,9 +63,9 @@ export const COLUMNS = {
 type Column = keyof typeof COLUMNS;
 
 export const TEMPLATE_CSV =
-  "id_producto,vendedor_id,vendedor_nombre,vendedor_alias,vendedor_email,vendedor_telefono,titulo,descripcion,categoria,condicion,edad,precio,marca,modelo,fotos,piezas\r\n" +
-  'P-0001,V-01,Lucía Martínez Ruiz,,lucia@example.com,55 1234 5678,Carriola Nuna Mixx,"Muy cuidada, incluye cubre lluvia",carriolas,como nuevo,RN a 2-4 años,4500,Nuna,Mixx,https://ejemplo.com/foto1.jpg https://ejemplo.com/foto2.jpg,\r\n' +
-  "P-0002,V-01,Lucía Martínez Ruiz,,,,Lote ropa niña,20 prendas,ropa,bueno,0-3m,850,,,https://ejemplo.com/foto3.jpg,20\r\n";
+  "id_producto,vendedor_id,vendedor_nombre,vendedor_alias,vendedor_email,vendedor_telefono,titulo,descripcion,categoria,condicion,edad,genero,precio,marca,modelo,fotos,piezas\r\n" +
+  'P-0001,V-01,Lucía Martínez Ruiz,,lucia@example.com,55 1234 5678,Carriola Nuna Mixx,"Muy cuidada, incluye cubre lluvia",carriolas,como nuevo,RN a 2-4 años,,4500,Nuna,Mixx,https://ejemplo.com/foto1.jpg https://ejemplo.com/foto2.jpg,\r\n' +
+  "P-0002,V-01,Lucía Martínez Ruiz,,,,Lote ropa niña,20 prendas,ropa,bueno,0-3m,niña,850,,,https://ejemplo.com/foto3.jpg,20\r\n";
 
 /** Lowercase, no accents, single spaces: for matching what people type. */
 export function norm(v: string): string {
@@ -184,6 +186,31 @@ const AGE_TOKENS: Record<string, AgeStage> = {
   allages: "all_ages",
   cualquieredad: "all_ages",
 };
+
+const GENDERS: Record<string, ListingGender> = {
+  f: "girl",
+  femenino: "girl",
+  nina: "girl",
+  nena: "girl",
+  girl: "girl",
+  mujer: "girl",
+  m: "boy",
+  masculino: "boy",
+  nino: "boy",
+  nene: "boy",
+  boy: "boy",
+  hombre: "boy",
+  u: "unisex",
+  unisex: "unisex",
+  ambos: "unisex",
+};
+
+/** "F", "M", "niña", "niño", "unisex"… → gender ("" → none). */
+export function matchGender(value: string): ListingGender | null | undefined {
+  const v = norm(value);
+  if (!v) return null;
+  return GENDERS[v];
+}
 
 /** "0-3 meses", "0 a 3 meses", "RN", "1-2 años", "4+", "todas"… → stage key. */
 export function matchAgeToken(token: string): AgeStage | null {
@@ -319,6 +346,9 @@ function validateRow(line: number, get: (c: Column) => string, { categories, max
   const ageStages = category ? normalizeAgeStages(category.age_mode, stages) : [];
   if (category && !ageStages.length && !unknown.length) errors.push("Falta la edad o etapa");
 
+  const gender = matchGender(get("gender"));
+  if (gender === undefined) errors.push(`Género desconocido: "${get("gender")}" (usa F, M o unisex)`);
+
   const priceCents = parsePriceToCents(normalizePrice(get("price")));
   if (priceCents === null) errors.push(`Precio inválido: "${get("price")}"`);
   else if (priceCents < MIN_PRICE_CENTS || priceCents > MAX_PRICE_CENTS)
@@ -351,6 +381,7 @@ function validateRow(line: number, get: (c: Column) => string, { categories, max
           categoryId: category.id,
           condition,
           ageStages,
+          gender: gender ?? null,
           priceCents,
           brand: get("brand").slice(0, 60) || null,
           model: get("model").slice(0, 80) || null,

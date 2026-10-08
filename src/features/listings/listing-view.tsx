@@ -3,10 +3,12 @@ import {
   AGE_STAGES,
   DELIVERY_METHODS,
   LISTING_CONDITIONS,
+  LISTING_GENDERS,
   type AgeStage,
   type CategoryAgeMode,
   type DeliveryMethod,
   type ListingCondition,
+  type ListingGender,
 } from "@/lib/domain/constants";
 import { formatAgeRange } from "@/lib/domain/age-mode";
 import { formatPrice } from "@/lib/money";
@@ -23,6 +25,7 @@ export type ListingViewData = {
   ageStages: AgeStage[];
   /** How the category treats age; "range" shows one "Edad recomendada" chip. */
   ageMode?: CategoryAgeMode;
+  gender?: ListingGender | null;
   categoryName: string | null;
   isBundle: boolean;
   bundleItemCount: number | null;
@@ -65,6 +68,9 @@ export function ListingView({ data, actions }: { data: ListingViewData; actions?
 
         <ul className="flex flex-wrap gap-2 text-sm">
           <Chip strong>{LISTING_CONDITIONS[data.condition].label}</Chip>
+          {data.gender && (
+            <Chip>{data.gender === "unisex" ? "Unisex" : `Para ${LISTING_GENDERS[data.gender].toLowerCase()}`}</Chip>
+          )}
           {data.isBundle && data.bundleItemCount && <Chip>Lote · {data.bundleItemCount} piezas</Chip>}
           {data.ageMode === "range" || data.ageStages.includes("all_ages") ? (
             <Chip>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { AGE_STAGES, DELIVERY_METHODS, LISTING_CONDITIONS } from "@/lib/domain/constants";
+import { AGE_STAGES, DELIVERY_METHODS, LISTING_CONDITIONS, LISTING_GENDERS } from "@/lib/domain/constants";
 import { formatPrice } from "@/lib/money";
 import { activeFilterKeys, filtersToQuery, type CatalogFilters } from "./filters";
 import { FiltersButton, FiltersPanel, FiltersProvider } from "./filters-panel";
@@ -145,6 +145,7 @@ function buildChips(f: CatalogFilters, categories: { slug: string; name: string 
       label: LISTING_CONDITIONS[c].label,
       remove: { conditions: f.conditions.filter((x) => x !== c) },
     });
+  if (f.gender) chips.push({ key: "gender", label: LISTING_GENDERS[f.gender], remove: { gender: null } });
   if (f.brand) chips.push({ key: "brand", label: f.brand, remove: { brand: "" } });
   if (f.city) chips.push({ key: "city", label: f.city, remove: { city: "" } });
   for (const d of f.delivery)

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LISTING_CONDITIONS, keysOf } from "@/lib/domain/constants";
+import { LISTING_CONDITIONS, LISTING_GENDERS, keysOf } from "@/lib/domain/constants";
 import { updateListingAsAdmin, type AdminResult } from "./actions";
 
 type Props = {
@@ -15,6 +15,7 @@ type Props = {
   priceCents: number;
   categoryId: string;
   condition: string;
+  gender: string | null;
   categories: { id: string; name: string }[];
 };
 
@@ -51,6 +52,17 @@ export function ListingEditForm(p: Props) {
             ))}
           </select>
         </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="gender">¿Para quién?</Label>
+        <select id="gender" name="gender" defaultValue={p.gender ?? ""} className={select}>
+          <option value="">Sin indicar</option>
+          {keysOf(LISTING_GENDERS).map((g) => (
+            <option key={g} value={g}>
+              {LISTING_GENDERS[g]}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="categoryId">Categoría</Label>

@@ -92,6 +92,7 @@ export async function saveListing(raw: ListingInput, intent: "draft" | "publish"
     model: input.model,
     condition: input.condition,
     age_stages: ageStages,
+    gender: input.gender ?? null,
     listing_type: input.isBundle ? "bundle" : "single",
     bundle_item_count: input.isBundle ? input.bundleItemCount : null,
     price_cents: input.priceCents,

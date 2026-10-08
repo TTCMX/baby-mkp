@@ -10,6 +10,7 @@ describe("parseFilters", () => {
       max: "4000",
       condition: "like_new,excellent",
       age: ["0_3m", "3_6m"],
+      gender: "girl",
       city: "CDMX",
       delivery: "shipping",
       sort: "price_asc",
@@ -23,11 +24,19 @@ describe("parseFilters", () => {
       brand: "",
       conditions: ["like_new", "excellent"],
       ages: ["0_3m", "3_6m"],
+      gender: "girl",
       city: "CDMX",
       delivery: ["shipping"],
       sort: "price_asc",
       page: 2,
     });
+  });
+
+  it("gender: only niña or niño (unisex is included by both)", () => {
+    expect(parseFilters({ gender: "boy" }).gender).toBe("boy");
+    expect(parseFilters({ gender: "unisex" }).gender).toBeNull();
+    expect(parseFilters({ gender: "" }).gender).toBeNull();
+    expect(filtersToQuery({ gender: "girl" })).toBe("?gender=girl");
   });
 
   it("ignores invalid values instead of failing", () => {
