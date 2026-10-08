@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
-import { Heart, MessageCircle, ShoppingBag } from "lucide-react";
+import { MessageCircle, ShoppingBag } from "lucide-react";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { track } from "@/lib/analytics/server";
@@ -14,6 +14,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { getListingDetail, type ListingDetail } from "@/features/listings/queries";
 import { ListingView, type ListingViewData } from "@/features/listings/listing-view";
 import { LISTING_STATUS_LABELS } from "@/features/listings/listing-status";
+import { FavoriteButton } from "@/features/favorites/favorite-button";
+import { isFavorite } from "@/features/favorites/queries";
 
 async function load(id: string) {
   return z.uuid().safeParse(id).success ? getListingDetail(id) : null;
@@ -82,6 +84,7 @@ export default async function ListingPage({ params, searchParams }: PageProps<"/
   if (!listing) notFound();
 
   const isOwner = user?.id === listing.seller_id;
+  const saved = user && !isOwner ? await isFavorite(user.id, listing.id) : false;
   if (!isOwner && listing.status === "active") {
     // Counted after the response so the page never waits for it (owners are excluded above).
     after(async () => {
@@ -128,7 +131,11 @@ export default async function ListingPage({ params, searchParams }: PageProps<"/
 
       <ListingView
         data={toViewData(listing)}
-        actions={isOwner ? null : <BuyerActions listingId={listing.id} status={listing.status} />}
+        actions={
+          isOwner ? null : (
+            <BuyerActions listingId={listing.id} status={listing.status} saved={saved} signedIn={Boolean(user)} />
+          )
+        }
       />
     </div>
   );
@@ -156,7 +163,17 @@ function productJsonLd(l: ListingDetail) {
   };
 }
 
-function BuyerActions({ listingId, status }: { listingId: string; status: ListingDetail["status"] }) {
+function BuyerActions({
+  listingId,
+  status,
+  saved,
+  signedIn,
+}: {
+  listingId: string;
+  status: ListingDetail["status"];
+  saved: boolean;
+  signedIn: boolean;
+}) {
   if (status === "sold" || status === "reserved") {
     return (
       <p className="rounded-2xl bg-muted p-4 text-center text-sm font-bold">
@@ -164,7 +181,7 @@ function BuyerActions({ listingId, status }: { listingId: string; status: Listin
       </p>
     );
   }
-  // Favorites and chat arrive in the next stages.
+  // Chat arrives in the next stage.
   return (
     <div className="space-y-2">
       <Link href={`/checkout/${listingId}`} className={buttonVariants({ size: "lg", className: "w-full" })}>
@@ -174,9 +191,7 @@ function BuyerActions({ listingId, status }: { listingId: string; status: Listin
         <Button variant="outline" disabled>
           <MessageCircle /> Contactar
         </Button>
-        <Button variant="outline" disabled>
-          <Heart /> Guardar
-        </Button>
+        <FavoriteButton listingId={listingId} initialSaved={saved} signedIn={signedIn} />
       </div>
       <p className="text-center text-xs text-muted-foreground">
         Pago protegido: el vendedor recibe tu dinero cuando confirmas que recibiste el producto.

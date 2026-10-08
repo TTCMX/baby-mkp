@@ -18,6 +18,10 @@ const babySchema = z
     kind: z.enum(["born", "expecting"]),
     date: isoDate,
     color: z.enum(["sky", "pink", "sun"]).default("sky"),
+    gender: z
+      .enum(["girl", "boy", ""])
+      .default("")
+      .transform((v) => v || null),
   })
   .superRefine((v, ctx) => {
     const diff = daysBetween(todayInMexico(), v.date);
@@ -38,10 +42,11 @@ export async function saveBaby(_prev: BabyFormState, formData: FormData): Promis
   const user = await requireUser("/babies");
   const parsed = babySchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
-  const { id, name, kind, date, color } = parsed.data;
+  const { id, name, kind, date, color, gender } = parsed.data;
   const row = {
     name,
     color,
+    gender,
     birth_date: kind === "born" ? date : null,
     due_date: kind === "expecting" ? date : null,
   };

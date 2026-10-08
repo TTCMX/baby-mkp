@@ -59,10 +59,17 @@ export async function getLatestListings(limit = 12): Promise<ListingCardData[]> 
 /**
  * Active listings for any of the given age stages ("Crece con tus bebés" feeds):
  * the ones made for the stage first, then "all ages" ones, newest first.
+ * With a gender, only items that fit it.
  */
-export async function getListingsForStages(stages: string[], limit = 10): Promise<ListingCardData[]> {
-  const { data, error } = await cardQuery(await createClient())
-    .overlaps("age_stages", stages)
+export async function getListingsForStages(
+  stages: string[],
+  limit = 10,
+  gender: "girl" | "boy" | null = null,
+): Promise<ListingCardData[]> {
+  let query = cardQuery(await createClient()).overlaps("age_stages", stages);
+  // A baby's gender: their items, unisex ones and items that don't have one (strollers, furniture…).
+  if (gender) query = query.or(`gender.is.null,gender.in.(${gender},unisex)`);
+  const { data, error } = await query
     .order("is_all_ages", { ascending: true })
     .order("published_at", { ascending: false })
     .limit(limit);

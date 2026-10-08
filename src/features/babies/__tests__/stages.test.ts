@@ -89,3 +89,11 @@ describe("stages", () => {
     expect(todayInMexico(new Date("2026-09-25T03:00:00Z"))).toBe("2026-09-24"); // 21:00 in CDMX
   });
 });
+
+describe("shoppingFor", () => {
+  it("pregnancy also shops for the newborn", async () => {
+    const { shoppingFor } = await import("../stages");
+    expect(shoppingFor("pregnancy")).toEqual({ stages: ["pregnancy", "newborn"], label: "Embarazo y RN" });
+    expect(shoppingFor("6_12m")).toEqual({ stages: ["6_12m"], label: "6–12 meses" });
+  });
+});

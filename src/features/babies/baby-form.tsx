@@ -16,6 +16,7 @@ type Props = {
     birth_date: string | null;
     due_date: string | null;
     color: keyof typeof BABY_COLORS;
+    gender: "girl" | "boy" | null;
   };
   onDone?: () => void;
 };
@@ -23,6 +24,7 @@ type Props = {
 export function BabyForm({ today, baby, onDone }: Props) {
   const [kind, setKind] = useState<"born" | "expecting">(baby?.due_date ? "expecting" : "born");
   const [color, setColor] = useState<keyof typeof BABY_COLORS>(baby?.color ?? "sky");
+  const [gender, setGender] = useState<"girl" | "boy" | "">(baby?.gender ?? "");
   const [state, action, pending] = useActionState<BabyFormState, FormData>(async (prev, data) => {
     const result = await saveBaby(prev, data);
     if (result?.ok) {
@@ -30,6 +32,7 @@ export function BabyForm({ today, baby, onDone }: Props) {
       if (!baby) {
         setKind("born");
         setColor("sky");
+        setGender("");
       }
       onDone?.();
     }
@@ -41,6 +44,7 @@ export function BabyForm({ today, baby, onDone }: Props) {
       {baby && <input type="hidden" name="id" value={baby.id} />}
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="color" value={color} />
+      <input type="hidden" name="gender" value={gender} />
 
       <div className="flex gap-2" role="radiogroup" aria-label="¿Ya nació?">
         {(
@@ -93,6 +97,38 @@ export function BabyForm({ today, baby, onDone }: Props) {
           min={kind === "expecting" ? today : undefined}
           defaultValue={(kind === "born" ? baby?.birth_date : baby?.due_date) ?? undefined}
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <p className="text-sm font-semibold" id={`gender-${baby?.id ?? "new"}`}>
+          ¿Es niña o niño?
+        </p>
+        <div className="flex gap-2" role="radiogroup" aria-labelledby={`gender-${baby?.id ?? "new"}`}>
+          {(
+            [
+              ["girl", "Niña"],
+              ["boy", "Niño"],
+              ["", "Todos"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value || "all"}
+              type="button"
+              role="radio"
+              aria-checked={gender === value}
+              onClick={() => setGender(value)}
+              className={cn(
+                "h-11 flex-1 rounded-full border-[1.5px] text-sm font-extrabold",
+                gender === value ? "border-foreground bg-foreground text-white" : "bg-card hover:bg-muted",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Te mostramos lo de su género y lo unisex. Elige &quot;Todos&quot; si aún no lo sabes o prefieres ver todo.
+        </p>
       </div>
 
       <div className="space-y-1.5">

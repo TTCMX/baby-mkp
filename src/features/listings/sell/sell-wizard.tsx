@@ -77,7 +77,12 @@ export function SellWizard(props: Props) {
   const { userId, listingId, mode, categories, brands, maxImages, seller } = props;
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [fields, setFields] = useState<WizardFields>(props.initialFields);
+  // Only one category on (launch: clothes only) → already chosen.
+  const [fields, setFields] = useState<WizardFields>(() =>
+    !props.initialFields.categoryId && categories.length === 1
+      ? { ...props.initialFields, categoryId: categories[0].id }
+      : props.initialFields,
+  );
   const [photos, setPhotos] = useState<WizardPhoto[]>(() =>
     props.initialPhotos.map((p) => ({
       key: p.path,

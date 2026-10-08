@@ -1,6 +1,8 @@
 -- RLS / business-rule smoke tests. Runs inside a transaction and rolls back.
 -- Executed by scripts/db/test.sh (plain PostgreSQL + Supabase stubs).
 begin;
+-- Fixtures use every category; production launches with only some turned on.
+update public.categories set is_active = true;
 
 -- Test helpers ---------------------------------------------------------------
 create function pg_temp.act_as(uid uuid) returns void language sql as $$

@@ -1,5 +1,7 @@
 -- Category age modes: age-less categories force "all ages"; others keep the seller's stages.
 begin;
+-- Fixtures use every category; production launches with only some turned on.
+update public.categories set is_active = true;
 
 create function pg_temp.assert(cond boolean, msg text) returns void language plpgsql as $$
 begin

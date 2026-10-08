@@ -105,6 +105,16 @@ export function outgrownStage(b: BabyDates, today: string): AgeStage | null {
   return i >= 2 ? STAGE_ORDER[i - 1].stage : null;
 }
 
+/**
+ * What a family shops for at a stage. While pregnant they also buy for the
+ * newborn, so the feed covers both.
+ */
+export function shoppingFor(stage: AgeStage): { stages: AgeStage[]; label: string } {
+  return stage === "pregnancy"
+    ? { stages: ["pregnancy", "newborn"], label: "Embarazo y RN" }
+    : { stages: [stage], label: AGE_STAGES[stage] };
+}
+
 export function nextStage(b: BabyDates, today: string): AgeStage | null {
   const i = currentStageIndex(b, today);
   return i < STAGE_ORDER.length - 1 ? STAGE_ORDER[i + 1].stage : null;

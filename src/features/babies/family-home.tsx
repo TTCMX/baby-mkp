@@ -14,8 +14,10 @@ export type BabyView = {
   ageLabel: string;
   headline: string;
   timeline: TimelineStep[];
-  currentStage: string;
-  currentLabel: string;
+  /** Stages the family shops for now (pregnancy also covers the newborn). */
+  shopStages: string[];
+  shopLabel: string;
+  gender: "girl" | "boy" | null;
   outgrown: { stage: string; label: string } | null;
 };
 
@@ -120,7 +122,7 @@ export function FamilyHome({
               </span>
             </div>
             <Link
-              href={`/sell/new?age=${baby.outgrown.stage}`}
+              href={`/sell/new?age=${baby.outgrown.stage}${baby.gender ? `&gender=${baby.gender}` : ""}`}
               className="flex h-11 shrink-0 items-center justify-center rounded-full bg-foreground px-5 font-extrabold text-white hover:bg-foreground/90"
             >
               Vender lo de {baby.outgrown.label}
@@ -132,10 +134,10 @@ export function FamilyHome({
       <section aria-labelledby="baby-feed-heading" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 id="baby-feed-heading" className="min-w-0 text-[22px] font-semibold sm:flex-1 md:text-[26px]">
-            Para {baby.name} · {baby.currentLabel}
+            Para {baby.name} · {baby.shopLabel}
           </h2>
           <Link
-            href={`/search?age=${baby.currentStage}`}
+            href={`/search?age=${baby.shopStages.join(",")}${baby.gender ? `&gender=${baby.gender}` : ""}`}
             className="shrink-0 rounded-full bg-foreground px-4 py-2 text-sm font-extrabold text-white"
           >
             Ver todo

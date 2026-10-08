@@ -8,7 +8,15 @@ import { CategoryIcon } from "@/features/catalog/category-icon";
 import { ListingCard } from "@/features/catalog/listing-card";
 import { FamilyHome, type BabyView } from "@/features/babies/family-home";
 import { getMyBabies, type Baby } from "@/features/babies/queries";
-import { ageLabel, currentStage, headline, outgrownStage, timeline, todayInMexico } from "@/features/babies/stages";
+import {
+  ageLabel,
+  currentStage,
+  headline,
+  outgrownStage,
+  shoppingFor,
+  timeline,
+  todayInMexico,
+} from "@/features/babies/stages";
 import {
   getListingsForStages,
   getLatestListings,
@@ -67,26 +75,29 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      <section aria-labelledby="categories-heading" className="flex flex-col gap-3">
-        <h2 id="categories-heading" className="text-[22px] font-semibold md:text-[26px]">
-          Categorías
-        </h2>
-        <ul className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-5 md:px-0">
-          {categories.map((c) => (
-            <li key={c.id} className="shrink-0">
-              <Link
-                href={`/category/${c.slug}`}
-                className="flex w-20 flex-col items-center gap-1.5 text-center text-xs font-bold md:w-auto md:flex-row md:gap-3 md:rounded-[22px] md:border-[1.5px] md:bg-card md:p-3 md:text-left md:text-sm md:hover:border-sky-soft"
-              >
-                <span className="flex size-14 items-center justify-center rounded-2xl bg-sky-wash md:size-11">
-                  <CategoryIcon icon={c.icon} className="size-6 text-primary md:size-5" />
-                </span>
-                <span className="leading-tight">{c.name}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* A single category (launch: clothes only) needs no picker. */}
+      {categories.length > 1 && (
+        <section aria-labelledby="categories-heading" className="flex flex-col gap-3">
+          <h2 id="categories-heading" className="text-[22px] font-semibold md:text-[26px]">
+            Categorías
+          </h2>
+          <ul className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-5 md:px-0">
+            {categories.map((c) => (
+              <li key={c.id} className="shrink-0">
+                <Link
+                  href={`/category/${c.slug}`}
+                  className="flex w-20 flex-col items-center gap-1.5 text-center text-xs font-bold md:w-auto md:flex-row md:gap-3 md:rounded-[22px] md:border-[1.5px] md:bg-card md:p-3 md:text-left md:text-sm md:hover:border-sky-soft"
+                >
+                  <span className="flex size-14 items-center justify-center rounded-2xl bg-sky-wash md:size-11">
+                    <CategoryIcon icon={c.icon} className="size-6 text-primary md:size-5" />
+                  </span>
+                  <span className="leading-tight">{c.name}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {latest.length === 0 ? (
         <div className="rounded-[22px] border-[1.5px] border-dashed p-8 text-center text-sm text-muted-foreground">
@@ -197,6 +208,7 @@ async function buildFamily(babies: Baby[]) {
   const today = todayInMexico();
   const views: BabyView[] = babies.map((b) => {
     const stage = currentStage(b, today);
+    const shop = shoppingFor(stage);
     const out = outgrownStage(b, today);
     return {
       id: b.id,
@@ -205,19 +217,20 @@ async function buildFamily(babies: Baby[]) {
       ageLabel: ageLabel(b, today),
       headline: headline(b.name, b, today),
       timeline: timeline(b, today),
-      currentStage: stage,
-      currentLabel: AGE_STAGES[stage],
+      shopStages: shop.stages,
+      shopLabel: shop.label,
+      gender: b.gender,
       outgrown: out ? { stage: out, label: AGE_STAGES[out] } : null,
     };
   });
-  // Products for each baby's current stage (plus "all ages").
-  const lists = await Promise.all(views.map((v) => getListingsForStages([v.currentStage, "all_ages"], 10)));
+  // Products for what each baby needs now (plus "all ages"), matching their gender if set.
+  const lists = await Promise.all(views.map((v) => getListingsForStages([...v.shopStages, "all_ages"], 10, v.gender)));
   const feeds = Object.fromEntries(
     views.map((v, i) => [
       v.id,
       lists[i].length === 0 ? (
         <div className="rounded-[22px] border-[1.5px] border-dashed p-8 text-center text-sm text-muted-foreground">
-          Aún no hay productos para {v.currentLabel}.{" "}
+          Aún no hay productos para {v.shopLabel}.{" "}
           <Link href="/sell/new" className="font-semibold text-primary">
             ¡Sé la primera persona en vender!
           </Link>
