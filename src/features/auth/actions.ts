@@ -7,6 +7,8 @@ import { publicEnv } from "@/lib/env";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { track } from "@/lib/analytics/server";
 import { requireUser } from "@/lib/auth";
+import { emailEnabled } from "@/lib/email";
+import { sendPasswordReset } from "./password-reset";
 
 export type AuthFormState = { error?: string; message?: string; fields?: Record<string, string> } | undefined;
 
@@ -91,15 +93,30 @@ export async function requestPasswordReset(_prev: AuthFormState, formData: FormD
   const email = String(formData.get("email") ?? "");
   if (!parsed.success) return { error: "Escribe un correo válido", fields: { email } };
 
+  const tooMany = {
+    error: "Se enviaron demasiados correos. Espera unos minutos e intenta de nuevo.",
+    fields: { email },
+  };
+  const sent = { message: "Si hay una cuenta con ese correo, te enviamos un enlace para crear una nueva contraseña." };
+
+  // With Resend configured we send the email ourselves: its link works from any browser.
+  if (emailEnabled()) {
+    try {
+      if ((await sendPasswordReset(parsed.data)) === "rate_limited") return tooMany;
+    } catch (err) {
+      console.error("[auth] reset email failed", err);
+      return { error: "No pudimos enviar el correo. Intenta de nuevo en unos minutos.", fields: { email } };
+    }
+    return sent;
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
     redirectTo: `${publicEnv().NEXT_PUBLIC_SITE_URL}/auth/callback?next=/reset-password`,
   });
-  if (error?.code === "over_email_send_rate_limit" || error?.code === "over_request_rate_limit") {
-    return { error: "Se enviaron demasiados correos. Espera unos minutos e intenta de nuevo.", fields: { email } };
-  }
+  if (error?.code === "over_email_send_rate_limit" || error?.code === "over_request_rate_limit") return tooMany;
   if (error) console.error("[auth] reset request failed", { code: error.code, message: error.message });
-  return { message: "Si hay una cuenta con ese correo, te enviamos un enlace para crear una nueva contraseña." };
+  return sent;
 }
 
 const newPasswordSchema = z
