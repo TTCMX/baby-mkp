@@ -164,6 +164,14 @@ const AGE_TOKENS: Record<string, AgeStage> = {
   "612m": "6_12m",
   "12y": "1_2y",
   "1224m": "1_2y",
+  // Clothing sizes ("1-3 meses", "1 año", "3 años"): the stage a child of that age is in.
+  "13m": "0_3m",
+  "1y": "1_2y",
+  "2y": "2_4y",
+  "3y": "2_4y",
+  "4y": "4y_plus",
+  "5y": "4y_plus",
+  "6y": "4y_plus",
   "24y": "2_4y",
   "4+": "4y_plus",
   "4+y": "4y_plus",
@@ -203,6 +211,12 @@ export function parseAges(value: string): { stages: AgeStage[]; unknown: string[
     else unknown.push(p);
   }
   return { stages, unknown };
+}
+
+/** "$1,500.00", "1500 MXN" or Excel's "316,00" (decimal comma) → "1500.00" / "316.00". */
+export function normalizePrice(value: string): string {
+  const v = value.replace(/mxn|\$|\s/gi, "");
+  return /^\d+,\d{1,2}$/.test(v) ? v.replace(",", ".") : v;
 }
 
 /** Links separated by spaces, commas, ";" or "|". Shared Google Drive / Dropbox links become direct downloads. */
@@ -305,7 +319,7 @@ function validateRow(line: number, get: (c: Column) => string, { categories, max
   const ageStages = category ? normalizeAgeStages(category.age_mode, stages) : [];
   if (category && !ageStages.length && !unknown.length) errors.push("Falta la edad o etapa");
 
-  const priceCents = parsePriceToCents(get("price").replace(/mxn/i, ""));
+  const priceCents = parsePriceToCents(normalizePrice(get("price")));
   if (priceCents === null) errors.push(`Precio inválido: "${get("price")}"`);
   else if (priceCents < MIN_PRICE_CENTS || priceCents > MAX_PRICE_CENTS)
     errors.push("Precio fuera de rango (mínimo $10)");
