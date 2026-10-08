@@ -16,13 +16,24 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type") as EmailOtpType | null;
 
   const supabase = await createClient();
-  let ok = false;
+  let error: { code?: string; message: string } | null = { message: "missing code or token_hash" };
 
   if (code) {
-    ok = !(await supabase.auth.exchangeCodeForSession(code)).error;
+    // PKCE (Supabase's default email links): only works in the browser that asked for the email.
+    ({ error } = await supabase.auth.exchangeCodeForSession(code));
   } else if (tokenHash && type) {
-    ok = !(await supabase.auth.verifyOtp({ type, token_hash: tokenHash })).error;
+    ({ error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash }));
   }
+  if (!error) return NextResponse.redirect(new URL(next, origin));
 
-  return NextResponse.redirect(new URL(ok ? next : "/login?error=link", origin));
+  console.error("[auth] callback failed", {
+    flow: code ? "pkce" : "token_hash",
+    type,
+    code: error.code,
+    message: error.message,
+  });
+  // A failed reset link: straight to asking for a new one.
+  const failed =
+    next === "/reset-password" || type === "recovery" ? "/forgot-password?error=link" : "/login?error=link";
+  return NextResponse.redirect(new URL(failed, origin));
 }
