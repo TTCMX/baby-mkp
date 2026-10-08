@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Doc, H2, List, Setting } from "@/features/legal/doc";
+import { Contact, Doc, H2, List } from "@/features/legal/doc";
 import { getPlatformSettings } from "@/lib/settings";
 import { SITE_NAME } from "@/lib/site";
 
@@ -12,14 +12,14 @@ export const metadata: Metadata = {
 
 export default async function TermsPage() {
   const s = await getPlatformSettings();
-  const contact = <Setting value={s.support_email} missing="correo de atención por definir" />;
+  const contact = <Contact email={s.support_email} />;
 
   return (
     <Doc title="Términos y condiciones" updated="8 de octubre de 2026">
       <p>
-        Estos términos regulan el uso de {SITE_NAME} (el &quot;sitio&quot;), operado por{" "}
-        <Setting value={s.legal_name} missing="responsable por definir" /> (&quot;nosotros&quot;). Al crear una cuenta,
-        comprar o vender aceptas estos términos y nuestro <Link href="/privacidad">Aviso de privacidad</Link>.
+        Estos términos regulan el uso de {SITE_NAME} (el &quot;sitio&quot;), operado por {s.legal_name || SITE_NAME}{" "}
+        (&quot;nosotros&quot;). Al crear una cuenta, comprar o vender aceptas estos términos y nuestro{" "}
+        <Link href="/privacidad">Aviso de privacidad</Link>.
       </p>
 
       <H2>1. Qué es {SITE_NAME}</H2>
@@ -130,8 +130,8 @@ export default async function TermsPage() {
       <H2>10. Cambios, ley aplicable y contacto</H2>
       <p>
         Podemos actualizar estos términos; si el cambio es importante te avisaremos en el sitio o por correo. Se rigen
-        por las leyes de México. Para cualquier duda o queja escríbenos a {contact}; también puedes acudir a la
-        Procuraduría Federal del Consumidor (Profeco).
+        por las leyes de México. Para cualquier duda o queja escríbenos{s.support_email ? " a " : " desde "}
+        {contact}; también puedes acudir a la Procuraduría Federal del Consumidor (Profeco).
       </p>
     </Doc>
   );

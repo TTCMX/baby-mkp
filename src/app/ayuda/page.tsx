@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Doc, H2, Setting } from "@/features/legal/doc";
+import { Doc, H2 } from "@/features/legal/doc";
 import { getPlatformSettings } from "@/lib/settings";
 import { SITE_NAME } from "@/lib/site";
 
@@ -91,19 +91,27 @@ export default async function HelpPage() {
       </div>
 
       <H2>Contacto</H2>
-      <p>
-        ¿Algo no salió bien? Escríbenos a <Setting value={s.support_email} missing="correo de atención por definir" />
-        {whatsapp && (
-          <>
-            {" "}
-            o por{" "}
-            <a href={`https://wa.me/${whatsapp}`} className="font-semibold text-primary">
-              WhatsApp
-            </a>
-          </>
-        )}
-        . Si es sobre un pedido, incluye su número.
-      </p>
+      {s.support_email || whatsapp ? (
+        <p>
+          ¿Algo no salió bien? Escríbenos
+          {s.support_email && (
+            <>
+              {" "}
+              a <a href={`mailto:${s.support_email}`}>{s.support_email}</a>
+            </>
+          )}
+          {s.support_email && whatsapp && " o"}
+          {whatsapp && (
+            <>
+              {" "}
+              por <a href={`https://wa.me/${whatsapp}`}>WhatsApp</a>
+            </>
+          )}
+          . Si es sobre un pedido, incluye su número.
+        </p>
+      ) : (
+        <p>¿Algo no salió bien? Muy pronto publicaremos aquí nuestro correo de atención.</p>
+      )}
       <p className="text-sm text-muted-foreground">
         <Link href="/terminos">Términos y condiciones</Link> · <Link href="/privacidad">Aviso de privacidad</Link>
       </p>

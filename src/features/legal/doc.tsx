@@ -22,7 +22,7 @@ export function List({ children }: { children: ReactNode }) {
   return <ul className="list-disc space-y-1.5 pl-5">{children}</ul>;
 }
 
-/** A value the admin hasn't filled in yet (Admin → Ajustes → Datos legales). */
-export function Setting({ value, missing = "por definir" }: { value: string; missing?: string }) {
-  return value ? <>{value}</> : <span className="rounded bg-sun-wash px-1 font-semibold">[{missing}]</span>;
+/** How to reach us: the support email, or a link to the help page until there is one. */
+export function Contact({ email }: { email: string }) {
+  return email ? <a href={`mailto:${email}`}>{email}</a> : <a href="/ayuda">nuestra página de Ayuda</a>;
 }
