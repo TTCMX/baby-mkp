@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CATEGORY_AGE_MODES, keysOf, type CategoryAgeMode } from "@/lib/domain/constants";
-import { saveCategory, updatePlatformSettings, type AdminResult } from "./actions";
+import { saveCategory, saveLegalInfo, updatePlatformSettings, type AdminResult } from "./actions";
 
 function Message({ state }: { state?: AdminResult }) {
   if (state?.error) return <p className="text-sm font-semibold text-destructive">{state.error}</p>;
@@ -80,6 +80,34 @@ export function SettingsForm({ s }: { s: Settings }) {
       </p>
       <Button type="submit" disabled={pending}>
         Guardar configuración
+      </Button>
+      <Message state={state} />
+    </form>
+  );
+}
+
+type Legal = { legal_name: string; legal_address: string; support_email: string; support_whatsapp: string };
+
+export function LegalForm({ s }: { s: Legal }) {
+  const [state, action, pending] = useActionState(saveLegalInfo, undefined);
+  const fields = [
+    ["legal_name", "Responsable (tu nombre o razón social)", "text"],
+    ["legal_address", "Domicilio", "text"],
+    ["support_email", "Correo de atención", "email"],
+    ["support_whatsapp", "WhatsApp de atención (opcional)", "tel"],
+  ] as const;
+  return (
+    <form action={action} className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {fields.map(([name, label, type]) => (
+          <div key={name} className="space-y-1.5">
+            <Label htmlFor={name}>{label}</Label>
+            <Input id={name} name={name} type={type} defaultValue={s[name]} />
+          </div>
+        ))}
+      </div>
+      <Button type="submit" disabled={pending}>
+        Guardar datos
       </Button>
       <Message state={state} />
     </form>

@@ -18,6 +18,8 @@ export const PRIVATE_PATHS = [
   "/favorites",
   "/messages",
   "/suspended",
+  "/forgot-password",
+  "/reset-password",
   "/auth",
   "/api",
 ];

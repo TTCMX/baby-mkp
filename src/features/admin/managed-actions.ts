@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cleanClabe, isValidClabe } from "@/features/wallet/clabe";
 import type { AdminResult } from "./actions";
 import { logAdminAction } from "./audit";
+import { emailNotificationsSoon } from "@/features/notifications/emails";
 
 // Admins operate the managed sellers (profiles of people who never sign in).
 
@@ -108,6 +109,7 @@ async function orderStep(fn: "order_mark_shipped" | "order_mark_delivered", orde
     orderId,
     args as Record<string, unknown>,
   );
+  emailNotificationsSoon();
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");
   return { ok: fn === "order_mark_shipped" ? "Marcado como enviado" : "Marcado como entregado" };

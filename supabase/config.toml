@@ -247,6 +247,19 @@ otp_expiry = 3600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+# Spanish templates (paste the same ones in Dashboard → Authentication → Emails; see docs/LANZAMIENTO.md).
+[auth.email.template.confirmation]
+subject = "Confirma tu correo en mercadito.baby"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Crea una nueva contraseña"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirma tu nuevo correo"
+content_path = "./supabase/templates/email_change.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true

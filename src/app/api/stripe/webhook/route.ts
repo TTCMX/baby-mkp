@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { handleStripeEvent } from "@/features/checkout/webhook";
+import { emailNotificationsSoon } from "@/features/notifications/emails";
 
 export async function POST(request: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
 
   try {
     await handleStripeEvent(event);
+    emailNotificationsSoon();
   } catch (err) {
     console.error("[webhook] handler failed", event.type, event.id, err);
     // 500 → Stripe retries with backoff.

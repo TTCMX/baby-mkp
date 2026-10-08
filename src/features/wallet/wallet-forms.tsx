@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { startTransition, useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,6 +102,16 @@ export function BankAccountForm({ account }: { account: Account }) {
         />
         {err.bankName && <p className="text-xs font-semibold text-destructive">{err.bankName}</p>}
       </div>
+      <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
+        <input type="checkbox" name="consent" value="on" required className="mt-0.5 size-4 shrink-0" />
+        <span>
+          Autorizo que usen estos datos bancarios para pagarme mis retiros, según el{" "}
+          <Link href="/privacidad" className="font-semibold text-primary">
+            Aviso de privacidad
+          </Link>
+          .
+        </span>
+      </label>
       {state?.error && (
         <p role="alert" className="text-sm font-semibold text-destructive">
           {state.error}

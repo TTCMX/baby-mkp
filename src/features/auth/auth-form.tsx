@@ -51,6 +51,11 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
           minLength={8}
           maxLength={72}
         />
+        {mode === "login" && (
+          <Link href="/forgot-password" className="block text-right text-xs font-semibold text-primary">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        )}
       </div>
 
       {state?.error && (
@@ -62,6 +67,20 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
       <Button type="submit" className="w-full" size="lg" disabled={pending}>
         {pending ? "Un momento…" : mode === "login" ? "Entrar" : "Crear cuenta"}
       </Button>
+
+      {mode === "signup" && (
+        <p className="text-center text-xs text-muted-foreground">
+          Al crear tu cuenta aceptas los{" "}
+          <Link href="/terminos" className="font-semibold text-primary">
+            Términos y condiciones
+          </Link>{" "}
+          y el{" "}
+          <Link href="/privacidad" className="font-semibold text-primary">
+            Aviso de privacidad
+          </Link>
+          .
+        </p>
+      )}
 
       <p className="text-center text-sm text-muted-foreground">
         {mode === "login" ? (

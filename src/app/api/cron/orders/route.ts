@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runOrderMaintenance } from "@/features/orders/completion";
+import { flushNotificationEmails } from "@/features/notifications/emails";
 
 /**
  * Daily (vercel.json cron): auto-completes orders whose confirmation window
@@ -11,7 +12,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   try {
-    return NextResponse.json(await runOrderMaintenance());
+    const orders = await runOrderMaintenance();
+    // Sweep: anything a request didn't get to email (or that failed) goes now.
+    const emails = await flushNotificationEmails(500);
+    return NextResponse.json({ ...orders, emails });
   } catch (err) {
     console.error("[cron] order maintenance failed", err);
     return NextResponse.json({ error: "failed" }, { status: 500 });

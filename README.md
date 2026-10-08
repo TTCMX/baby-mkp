@@ -19,6 +19,11 @@ npm run dev
 
 Para hacer admin a un usuario: `update profiles set role = 'admin' where username = '...';` (luego entra a `/admin`).
 
+## Lanzamiento
+
+Pasos fuera del código (dominio, correos con Resend, plantillas de Supabase, Stripe en vivo, datos legales):
+[`docs/LANZAMIENTO.md`](docs/LANZAMIENTO.md).
+
 ## Despliegue de la base de datos
 
 `.github/workflows/supabase-migrations.yml` aplica `supabase/migrations/` al proyecto de Supabase
@@ -193,6 +198,11 @@ supabase/
       preseleccionada), más productos de su etapa actual. Base del futuro Baby Closet.
       Con su género (Niña / Niño / Todos) el feed filtra solo (niña → niña + unisex + sin género), y en Embarazo
       muestra Embarazo + RN (lo que se compra antes del parto).
+- [x] **Correos:** cada aviso del sitio también llega por correo (Resend; `src/features/notifications/emails.ts`,
+      se envían después de cada acción y el job diario reintenta). Plantillas de Supabase en `supabase/templates/`.
+- [x] **Cuenta:** "¿Olvidaste tu contraseña?" (`/forgot-password` → enlace → `/reset-password`).
+- [x] **Legal:** `/terminos`, `/privacidad` (LFPDPPP; consentimiento expreso para la CLABE), `/ayuda` y pie de
+      página. Responsable y contacto se editan en Admin → Ajustes.
 - [x] **Favoritos:** "Guardar" en el producto (al instante; visitantes → iniciar sesión) y "Mis favoritos".
 - [ ] 10. P1: chat, wishlist, IA para listings, concierge
 
