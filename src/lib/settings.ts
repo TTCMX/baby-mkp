@@ -13,6 +13,10 @@ const settingsSchema = z.object({
   withdrawal_min_cents: z.number().int().nonnegative().default(0),
   managed_contact_email: z.string().default(""),
   managed_contact_phone: z.string().default(""),
+  legal_name: z.string().default(""),
+  legal_address: z.string().default(""),
+  support_email: z.string().default(""),
+  support_whatsapp: z.string().default(""),
 });
 
 export type PlatformSettings = z.infer<typeof settingsSchema>;

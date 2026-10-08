@@ -10,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { trackCompletion } from "@/features/orders/completion";
 import { logAdminAction } from "./audit";
 import { refundOrder as refund } from "./refunds";
+import { emailNotificationsSoon } from "@/features/notifications/emails";
 
 // Every action: requireAdmin() first (the layout check alone does not protect
 // Server Actions), then a service-role write, then an audit log entry.
@@ -81,6 +82,7 @@ export async function moveListing(listingId: string, move: ListingMove, reason?:
       data: { listing_id: listingId },
     });
   }
+  emailNotificationsSoon();
   await logAdminAction(admin.id, `listing.${move}`, "listing", listingId, { reason: cleanReason });
   revalidatePath("/admin/listings");
   revalidatePath(`/listing/${listingId}`);
@@ -189,6 +191,7 @@ export async function refundOrderAsAdmin(orderId: string, reason: string): Promi
     if (msg === "not_refundable") return { error: "Este pedido no se puede reembolsar en su estado actual" };
     return fail(err, "No pudimos completar el reembolso. Revisa Stripe antes de reintentar.");
   }
+  emailNotificationsSoon();
   await logAdminAction(admin.id, "order.refund", "order", orderId, { reason: cleanReason });
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");
@@ -239,6 +242,7 @@ export async function completeOrderAsAdmin(orderId: string, note: string): Promi
       data: { order_id: orderId },
     })),
   );
+  emailNotificationsSoon();
   await trackCompletion(orderId);
   await logAdminAction(admin.id, "order.complete", "order", orderId, { note: cleanNote });
   revalidatePath(`/admin/orders/${orderId}`);
@@ -268,6 +272,7 @@ export async function settleWithdrawalAsAdmin(id: string, paid: boolean, input: 
     if (error?.message.includes("invalid_transition")) return { error: "Este retiro ya fue procesado" };
     return fail(error, "No pudimos actualizar el retiro");
   }
+  emailNotificationsSoon();
   await logAdminAction(admin.id, paid ? "withdrawal.paid" : "withdrawal.failed", "withdrawal", id, {
     amount_cents: data.amount_cents,
     ...(paid ? { reference: note || null } : { reason: note }),
@@ -317,6 +322,34 @@ export async function updatePlatformSettings(_prev: AdminResult | undefined, for
   });
   revalidatePath("/admin/settings");
   return { ok: "Configuración guardada. Aplica a las compras nuevas." };
+}
+
+const legalSchema = z.object({
+  legal_name: z.string().trim().max(150),
+  legal_address: z.string().trim().max(300),
+  support_email: z.union([z.literal(""), z.email("Correo inválido")]),
+  support_whatsapp: z.string().trim().max(30),
+});
+
+/** Who runs the site and how to reach them: shown in Terms, Privacy and Help. */
+export async function saveLegalInfo(_prev: AdminResult | undefined, formData: FormData): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  const parsed = legalSchema.safeParse({
+    legal_name: formData.get("legal_name") ?? "",
+    legal_address: formData.get("legal_address") ?? "",
+    support_email: String(formData.get("support_email") ?? "").trim(),
+    support_whatsapp: formData.get("support_whatsapp") ?? "",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+  const db = createAdminClient();
+  for (const [key, value] of Object.entries(parsed.data)) {
+    const { error } = await db.from("platform_settings").update({ value, updated_by: admin.id }).eq("key", key);
+    if (error) return fail(error, "No pudimos guardar los datos");
+  }
+  await logAdminAction(admin.id, "settings.update", "setting", "legal", parsed.data);
+  revalidatePath("/admin/settings");
+  for (const path of ["/terminos", "/privacidad", "/ayuda"]) revalidatePath(path);
+  return { ok: "Datos guardados" };
 }
 
 const categorySchema = z.object({

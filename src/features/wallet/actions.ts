@@ -7,6 +7,7 @@ import { track } from "@/lib/analytics/server";
 import { parsePriceToCents } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
 import { cleanClabe, isValidClabe } from "./clabe";
+import { emailNotificationsSoon } from "@/features/notifications/emails";
 
 export type WalletFormState = { ok?: string; error?: string; fieldErrors?: Record<string, string> } | undefined;
 
@@ -18,6 +19,8 @@ const accountSchema = z.object({
     .refine(isValidClabe, "Revisa tu CLABE: el último dígito no coincide"),
   holderName: z.string().trim().min(3, "Escribe el nombre completo del titular").max(120),
   bankName: z.string().trim().min(2, "Escribe el banco").max(80),
+  // Express consent for financial data (LFPDPPP).
+  consent: z.literal("on", { error: "Necesitamos tu autorización para usar estos datos" }),
 });
 
 /** Where withdrawals are sent. Owner-only row (RLS); a withdrawal keeps a snapshot of it. */
@@ -69,6 +72,7 @@ export async function requestWithdrawal(_prev: WalletFormState, formData: FormDa
     if (!key) console.error("[wallet] withdrawal failed", error);
     return { error: key ? WITHDRAWAL_ERRORS[key] : "No pudimos registrar tu retiro. Intenta de nuevo." };
   }
+  emailNotificationsSoon();
   await track("withdrawal_requested", user.id, { withdrawal_id: data.id, amount_cents: amount });
   revalidatePath("/balance");
   return { ok: data.payout_date };

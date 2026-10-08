@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { trackCompletion } from "./completion";
+import { emailNotificationsSoon } from "@/features/notifications/emails";
 
 export type OrderActionResult = { error?: string };
 
@@ -25,6 +26,7 @@ async function call(fn: string, args: Record<string, unknown>, orderId: string):
     if (!key) console.error(`[orders] ${fn} failed`, error);
     return { error: key ? ERRORS[key] : "No pudimos actualizar el pedido. Intenta de nuevo." };
   }
+  emailNotificationsSoon();
   revalidatePath(`/orders/${orderId}`);
   revalidatePath("/orders");
   return {};

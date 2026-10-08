@@ -11,6 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     { url: SITE_URL, changeFrequency: "daily", priority: 1 },
     { url: `${SITE_URL}/search`, changeFrequency: "daily", priority: 0.8 },
+    ...["/ayuda", "/terminos", "/privacidad"].map((p) => ({ url: `${SITE_URL}${p}`, priority: 0.3 })),
   ];
   try {
     const supabase = createPublicClient();

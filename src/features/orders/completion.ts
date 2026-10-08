@@ -1,6 +1,7 @@
 import "server-only";
 import { track } from "@/lib/analytics/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { emailNotificationsSoon } from "@/features/notifications/emails";
 
 // When an order becomes "completed" the database credits the seller's balance
 // (trigger `orders_credit_seller`), whichever path completed it: buyer
@@ -38,6 +39,7 @@ export async function completeOrderIfDue(
   if (Date.now() - new Date(order.delivered_at).getTime() <= autoCompleteDays * 86_400_000) return false;
   const { data } = await createAdminClient().rpc("complete_due_orders", { p_order_id: order.id });
   if (!Array.isArray(data) || data.length === 0) return false;
+  emailNotificationsSoon();
   await trackCompletion(order.id);
   return true;
 }

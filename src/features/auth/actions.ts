@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { publicEnv } from "@/lib/env";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { track } from "@/lib/analytics/server";
+import { requireUser } from "@/lib/auth";
 
 export type AuthFormState = { error?: string; message?: string; fields?: Record<string, string> } | undefined;
 
@@ -82,6 +83,45 @@ function signUpErrorMessage(code: string | undefined, message: string): string {
   if (/sending.*email/i.test(message)) return "No pudimos enviar el correo de confirmación. Intenta más tarde.";
   if (/database error/i.test(message)) return "No pudimos preparar tu perfil. Ya lo estamos revisando.";
   return "No pudimos crear tu cuenta. Intenta de nuevo.";
+}
+
+/** Sends the reset link. Same answer whether or not the account exists (no account probing). */
+export async function requestPasswordReset(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  const parsed = credentials.shape.email.safeParse(formData.get("email"));
+  const email = String(formData.get("email") ?? "");
+  if (!parsed.success) return { error: "Escribe un correo válido", fields: { email } };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
+    redirectTo: `${publicEnv().NEXT_PUBLIC_SITE_URL}/auth/callback?next=/reset-password`,
+  });
+  if (error?.code === "over_email_send_rate_limit" || error?.code === "over_request_rate_limit") {
+    return { error: "Se enviaron demasiados correos. Espera unos minutos e intenta de nuevo.", fields: { email } };
+  }
+  if (error) console.error("[auth] reset request failed", { code: error.code, message: error.message });
+  return { message: "Si hay una cuenta con ese correo, te enviamos un enlace para crear una nueva contraseña." };
+}
+
+const newPasswordSchema = z
+  .object({ password: credentials.shape.password, confirm: z.string() })
+  .refine((d) => d.password === d.confirm, { message: "Las contraseñas no coinciden" });
+
+/** Second step: the reset link signed the user in; now they choose the new password. */
+export async function updatePassword(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  await requireUser("/forgot-password");
+  const parsed = newPasswordSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) {
+    if (error.code === "same_password") return { error: "Usa una contraseña distinta a la anterior" };
+    if (error.code === "weak_password")
+      return { error: "Esa contraseña es muy débil. Usa una más larga, con letras y números." };
+    console.error("[auth] update password failed", { code: error.code, message: error.message });
+    return { error: "No pudimos cambiar tu contraseña. Pide un enlace nuevo." };
+  }
+  redirect("/");
 }
 
 export async function signOut() {

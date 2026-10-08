@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyBalance } from "@/features/wallet/queries";
 import { addressSchema, CHECKOUT_ERRORS, checkoutSchema } from "./schema";
 import { trackOrderPaid } from "./webhook";
+import { emailNotificationsSoon } from "@/features/notifications/emails";
 
 export type CheckoutState = { error?: string; fieldErrors?: Record<string, string> } | undefined;
 
@@ -98,6 +99,7 @@ export async function startCheckout(_prev: CheckoutState, formData: FormData): P
     // Paid entirely with balance: the order is already paid, no Stripe step.
     await track("checkout_started", user.id, startedProps);
     await trackOrderPaid(orderId);
+    emailNotificationsSoon();
     redirect(`/orders/${orderId}?paid=1`);
   }
 

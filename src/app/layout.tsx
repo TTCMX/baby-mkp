@@ -3,6 +3,7 @@ import { Fredoka, Nunito } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SiteHeader } from "@/components/layout/site-header";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { SiteFooter } from "@/components/layout/site-footer";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -28,7 +29,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="es-MX" className={`${nunito.variable} ${fredoka.variable}`}>
       <body className="min-h-dvh font-sans">
         <SiteHeader />
-        <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 md:pb-12">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 pb-10 pt-4 md:pb-12">{children}</main>
+        <SiteFooter />
         <MobileNav />
         <SpeedInsights />
       </body>

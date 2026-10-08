@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es-MX"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Confirma tu correo</title></head>
+<body style="margin:0;background:#f7fbff;font-family:Nunito,Helvetica,Arial,sans-serif;color:#1f2a44">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;padding:28px">
+        <tr><td style="font-size:18px;font-weight:700;color:#286eb2;padding-bottom:16px">mercadito.baby</td></tr>
+        <tr><td style="font-size:20px;font-weight:700;padding-bottom:8px">Confirma tu correo</td></tr>
+        <tr><td style="font-size:15px;line-height:1.5;padding-bottom:20px">¡Hola! Confirma tu correo para terminar de crear tu cuenta en mercadito.baby.</td></tr>
+        <tr><td style="padding-bottom:16px">
+          <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email&next=/" style="display:inline-block;background:#ff6f9c;color:#1f2a44;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:999px">Confirmar mi correo</a>
+        </td></tr>
+        <tr><td style="font-size:13px;color:#616a83;line-height:1.5">Si no creaste una cuenta, ignora este correo.</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>
