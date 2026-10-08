@@ -1,6 +1,7 @@
 import type {
   AgeStage,
   CategoryAgeMode,
+  ListingGender,
   DeliveryMethod,
   ListingCondition,
   ListingStatus,
@@ -49,6 +50,7 @@ export type Listing = {
   model: string | null;
   condition: ListingCondition;
   age_stages: AgeStage[];
+  gender: ListingGender | null;
   listing_type: ListingType;
   bundle_item_count: number | null;
   price_cents: number;

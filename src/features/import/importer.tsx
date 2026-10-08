@@ -195,6 +195,9 @@ export function Importer({ categories, maxPhotos }: { categories: ImportCategory
               <b>condicion:</b> nuevo con etiquetas, como nuevo, excelente, bueno, aceptable.
             </li>
             <li>
+              <b>genero</b> (opcional): F / M, niña / niño o unisex.
+            </li>
+            <li>
               <b>edad:</b> RN, 0-3m, 3-6m, 6-12m, 1-2a, 2-4a, 4+, embarazo, todas; varias separadas por coma o un rango
               (&quot;RN a 2-4 años&quot;). No hace falta en muebles, accesorios, etc.
             </li>

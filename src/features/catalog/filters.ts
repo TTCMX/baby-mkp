@@ -5,6 +5,7 @@ import {
   type AgeStage,
   type DeliveryMethod,
   type ListingCondition,
+  type ListingGender,
 } from "@/lib/domain/constants";
 import { parsePriceToCents } from "@/lib/money";
 
@@ -26,6 +27,8 @@ export type CatalogFilters = {
   brand: string;
   conditions: ListingCondition[];
   ages: AgeStage[];
+  /** "Niña" or "Niño" (each also shows unisex items). */
+  gender: Exclude<ListingGender, "unisex"> | null;
   city: string;
   delivery: DeliveryMethod[];
   sort: Sort;
@@ -70,6 +73,7 @@ export function parseFilters(params: RawParams): CatalogFilters {
     brand: cleanText(one(params.brand), 60),
     conditions: pick(list(params.condition), LISTING_CONDITIONS),
     ages: pick(list(params.age), AGE_STAGES),
+    gender: ((g) => (g === "girl" || g === "boy" ? g : null))(one(params.gender)),
     city: cleanText(one(params.city), 80),
     delivery: pick(list(params.delivery), DELIVERY_METHODS),
     sort: sort in SORTS ? (sort as Sort) : "recent",
@@ -87,6 +91,7 @@ export function filtersToQuery(f: Partial<CatalogFilters>): string {
   if (f.brand) p.set("brand", f.brand);
   if (f.conditions?.length) p.set("condition", f.conditions.join(","));
   if (f.ages?.length) p.set("age", f.ages.join(","));
+  if (f.gender) p.set("gender", f.gender);
   if (f.city) p.set("city", f.city);
   if (f.delivery?.length) p.set("delivery", f.delivery.join(","));
   if (f.sort && f.sort !== "recent") p.set("sort", f.sort);
@@ -137,6 +142,7 @@ export function activeFilterKeys(f: CatalogFilters): string[] {
   if (f.brand) keys.push("brand");
   if (f.conditions.length) keys.push("condition");
   if (f.ages.length) keys.push("age");
+  if (f.gender) keys.push("gender");
   if (f.city) keys.push("city");
   if (f.delivery.length) keys.push("delivery");
   return keys;

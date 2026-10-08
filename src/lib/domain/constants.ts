@@ -23,6 +23,10 @@ export const AGE_STAGES = {
 } as const;
 export type AgeStage = keyof typeof AGE_STAGES;
 
+/** Who an item is for (mostly clothes and shoes); optional. Mirrors `listing_gender`. */
+export const LISTING_GENDERS = { girl: "Niña", boy: "Niño", unisex: "Unisex" } as const;
+export type ListingGender = keyof typeof LISTING_GENDERS;
+
 /** How a category relates to the baby's age (mirrors `category_age_mode`). */
 export const CATEGORY_AGE_MODES = {
   none: { label: "Sin etapa", hint: "La edad no importa (muebles, accesorios): sirve para todas" },

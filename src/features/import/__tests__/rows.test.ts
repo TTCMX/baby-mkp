@@ -122,6 +122,17 @@ describe("mapping what people type", () => {
     expect(normalizePrice("1,500")).toBe("1,500");
   });
 
+  it("genders", async () => {
+    const { matchGender } = await import("../rows");
+    expect(matchGender("F")).toBe("girl");
+    expect(matchGender("m")).toBe("boy");
+    expect(matchGender("Niña")).toBe("girl");
+    expect(matchGender("niño")).toBe("boy");
+    expect(matchGender("Unisex")).toBe("unisex");
+    expect(matchGender("")).toBeNull();
+    expect(matchGender("x")).toBeUndefined();
+  });
+
   it("public name keeps only first name + initial", () => {
     expect(publicName("Lucía Martínez Ruiz")).toBe("Lucía M.");
     expect(publicName("Ana")).toBe("Ana");
@@ -141,6 +152,8 @@ describe("readSheet", () => {
     expect(stroller.photos).toHaveLength(2);
     expect(stroller.priceCents).toBe(450000);
     expect(clothes.bundleItemCount).toBe(20);
+    expect(clothes.gender).toBe("girl");
+    expect(stroller.gender).toBeNull();
     expect(clothes.ageStages).toEqual(["0_3m"]);
   });
 

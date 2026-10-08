@@ -33,6 +33,7 @@ export default async function EditListingPage({ params }: PageProps<"/sell/[id]/
         model: listing.model ?? "",
         condition: listing.condition,
         ageStages: listing.age_stages,
+        gender: listing.gender ?? "",
         isBundle: listing.listing_type === "bundle",
         bundleItemCount: listing.bundle_item_count ? String(listing.bundle_item_count) : "",
         price: centsToInput(listing.price_cents),

@@ -12,11 +12,13 @@ import {
   AGE_STAGES,
   DELIVERY_METHODS,
   LISTING_CONDITIONS,
+  LISTING_GENDERS,
   keysOf,
   type AgeStage,
   type CategoryAgeMode,
   type DeliveryMethod,
   type ListingCondition,
+  type ListingGender,
 } from "@/lib/domain/constants";
 import { expandRange, normalizeAgeStages, RANGE_STAGES, rangeBounds, type RangeStage } from "@/lib/domain/age-mode";
 import { processImage } from "@/lib/images";
@@ -45,6 +47,7 @@ export type WizardFields = {
   model: string;
   condition: ListingCondition | "";
   ageStages: AgeStage[];
+  gender: ListingGender | "";
   isBundle: boolean;
   bundleItemCount: string;
   price: string;
@@ -186,6 +189,7 @@ export function SellWizard(props: Props) {
       model: fields.model,
       condition: fields.condition as ListingCondition,
       ageStages: fields.ageStages,
+      gender: fields.gender || null,
       isBundle: fields.isBundle,
       bundleItemCount: fields.isBundle && Number.isFinite(bundleCount) ? bundleCount : null,
       priceCents: parsePriceToCents(fields.price) ?? Number.NaN,
@@ -269,6 +273,7 @@ export function SellWizard(props: Props) {
     model: fields.model || null,
     ageStages: fields.ageStages,
     ageMode: category?.age_mode,
+    gender: fields.gender || null,
     categoryName: category?.name ?? null,
     isBundle: fields.isBundle,
     bundleItemCount: Number.parseInt(fields.bundleItemCount, 10) || null,
@@ -389,6 +394,20 @@ export function SellWizard(props: Props) {
               error={errors.ageStages}
               onChange={(v) => set("ageStages", v)}
             />
+
+            <Field label="¿Para quién? (opcional)">
+              <div className="flex flex-wrap gap-2">
+                {keysOf(LISTING_GENDERS).map((g) => (
+                  <Pill
+                    key={g}
+                    selected={fields.gender === g}
+                    onClick={() => set("gender", fields.gender === g ? "" : g)}
+                  >
+                    {LISTING_GENDERS[g]}
+                  </Pill>
+                ))}
+              </div>
+            </Field>
 
             <Field label="Precio" htmlFor="price" error={errors.priceCents}>
               <div className="relative">

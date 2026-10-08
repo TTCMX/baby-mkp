@@ -101,6 +101,7 @@ const listingEditSchema = z.object({
   }),
   categoryId: z.uuid(),
   condition: z.enum(keysOf(LISTING_CONDITIONS) as [string, ...string[]]),
+  gender: z.enum(["", "girl", "boy", "unisex"]).transform((v) => v || null),
 });
 
 export async function updateListingAsAdmin(listingId: string, formData: FormData): Promise<AdminResult> {
@@ -113,7 +114,7 @@ export async function updateListingAsAdmin(listingId: string, formData: FormData
   const db = createAdminClient();
   const { data: before } = await db
     .from("listings")
-    .select("title, price_cents, category_id, condition")
+    .select("title, price_cents, category_id, condition, gender")
     .eq("id", listingId)
     .maybeSingle();
   if (!before) return { error: "Producto no encontrado" };
@@ -125,6 +126,7 @@ export async function updateListingAsAdmin(listingId: string, formData: FormData
       price_cents: d.price,
       category_id: d.categoryId,
       condition: d.condition,
+      gender: d.gender,
     })
     .eq("id", listingId);
   if (error) return fail(error, "No pudimos guardar los cambios");
