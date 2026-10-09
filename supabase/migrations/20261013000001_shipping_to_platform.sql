@@ -1,9 +1,14 @@
 -- =============================================================================
--- Shipping belongs to the platform (it ships and pays the labels): the seller's
--- balance gets item price − commission; the platform keeps commission + shipping
--- − Stripe fee. Orders not completed yet are corrected; completed ones (already
--- in the sellers' balance) stay as they were.
+-- Shipping belongs to the platform: it charges one fixed price (Admin → Ajustes)
+-- and sends the seller a prepaid label. The seller's balance gets item price −
+-- commission; the platform keeps commission + shipping − Stripe fee. Orders not
+-- completed yet are corrected; completed ones (already in the sellers' balance)
+-- stay as they were. listings.shipping_price_cents is no longer used.
 -- =============================================================================
+
+insert into public.platform_settings (key, value, description) values
+  ('shipping_price_cents', '9900', 'Precio fijo del envío que paga el comprador (centavos); la plataforma paga la guía')
+on conflict (key) do nothing;
 
 create or replace function public.create_checkout_order(
   p_listing_id uuid,
@@ -58,7 +63,7 @@ begin
   if p_item_price_cents <> l.price_cents then
     raise exception 'price_changed' using errcode = '22023';
   end if;
-  if p_shipping_cents <> (case when p_delivery_method = 'shipping' then coalesce(l.shipping_price_cents, 0) else 0 end) then
+  if p_shipping_cents <> (case when p_delivery_method = 'shipping' then coalesce((public.get_setting('shipping_price_cents'))::int, 0) else 0 end) then
     raise exception 'shipping_changed' using errcode = '22023';
   end if;
   if p_delivery_method in ('shipping', 'local_delivery') and p_shipping_address is null then

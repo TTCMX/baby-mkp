@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle2, PackageCheck, Star, Truck, TriangleAlert } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { CheckCircle2, Download, PackageCheck, Star, Truck, TriangleAlert } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { DeliveryMethod, OrderStatus } from "@/lib/domain/constants";
@@ -41,40 +40,42 @@ export function SellerActions({
   orderId,
   status,
   deliveryMethod,
+  label,
 }: {
   orderId: string;
   status: OrderStatus;
   deliveryMethod: DeliveryMethod;
+  label: { url: string | null; carrier: string | null; tracking: string | null };
 }) {
   const { pending, error, run } = useAction();
-  const [carrier, setCarrier] = useState("");
-  const [tracking, setTracking] = useState("");
 
+  // Shipping: the platform sends a prepaid label; the seller prints it and drops the package off.
   if (status === "paid" && deliveryMethod === "shipping") {
+    if (!label.url) {
+      return (
+        <p className="text-sm">
+          Estamos preparando tu <b>guía prepagada</b>. Te avisaremos por correo en cuanto esté lista; mientras, deja el
+          producto limpio y empacado.
+        </p>
+      );
+    }
     return (
-      <div className="space-y-3">
-        <p className="text-sm">Cuando lo envíes, agrega la guía para que el comprador pueda rastrearlo.</p>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="carrier">Paquetería</Label>
-            <Input
-              id="carrier"
-              placeholder="Ej. Estafeta"
-              value={carrier}
-              onChange={(e) => setCarrier(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="tracking">Número de guía</Label>
-            <Input id="tracking" value={tracking} onChange={(e) => setTracking(e.target.value)} />
-          </div>
-        </div>
-        <Button
-          className="w-full"
-          disabled={pending}
-          onClick={() => run(() => markShipped(orderId, { carrier, tracking }))}
+      <div className="space-y-3 text-sm">
+        <ol className="list-decimal space-y-1 pl-5">
+          <li>Descarga e imprime tu guía.</li>
+          <li>Empaca bien el producto y pega la guía por fuera.</li>
+          <li>Entrégalo en una sucursal de {label.carrier ?? "la paquetería"}.</li>
+        </ol>
+        <a
+          href={label.url}
+          target="_blank"
+          rel="noreferrer"
+          className={cn(buttonVariants({ variant: "outline" }), "w-full")}
         >
-          <Truck /> Marcar como enviado
+          <Download /> Descargar guía{label.tracking ? ` · ${label.tracking}` : ""}
+        </a>
+        <Button className="w-full" disabled={pending} onClick={() => run(() => markShipped(orderId, {}))}>
+          <Truck /> Ya lo entregué en la paquetería
         </Button>
         <ErrorText error={error} />
       </div>

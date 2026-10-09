@@ -39,7 +39,6 @@ export default async function NewListingPage({ searchParams }: PageProps<"/sell/
         city: user.profile.city ?? "",
         municipality: user.profile.municipality ?? "",
         deliveryMethods: ["pickup"],
-        shippingPrice: "",
       }}
     />
   );

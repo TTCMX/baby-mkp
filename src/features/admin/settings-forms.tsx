@@ -20,6 +20,7 @@ type Settings = {
   max_images_per_listing: number;
   order_auto_complete_days: number;
   withdrawal_min_cents: number;
+  shipping_price_cents: number;
   listings_require_review: boolean;
 };
 
@@ -64,6 +65,7 @@ export function SettingsForm({ s }: { s: Settings }) {
           value={s.withdrawal_min_cents / 100}
           step="1"
         />
+        <Field label="Precio fijo de envío (MXN)" name="shipping_price" value={s.shipping_price_cents / 100} step="1" />
       </div>
       <label className="flex items-center gap-3 text-sm font-semibold">
         <input

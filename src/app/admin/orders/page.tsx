@@ -15,6 +15,8 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
   const disputed = sp.disputed === "1";
   // Managed sellers' sales waiting for the warehouse to deliver them.
   const managed = sp.managed === "1";
+  // Paid shipping orders still waiting for the platform's prepaid label.
+  const needsLabel = sp.label === "1";
 
   const supabase = await createClient(); // admin session (RLS: is_admin)
   let query = supabase
@@ -29,6 +31,7 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
   else query = query.neq("status", "pending_payment");
   if (disputed) query = query.not("disputed_at", "is", null).is("dispute_resolved_at", null);
   if (managed) query = query.eq("seller.is_managed", true).in("status", ["paid", "in_delivery"]);
+  if (needsLabel) query = query.eq("delivery_method", "shipping").eq("status", "paid").is("shipping_label_url", null);
   const { data: orders, count } = await query;
 
   const chip = (href: string, active: boolean, label: string) => (
@@ -44,7 +47,8 @@ export default async function AdminOrders({ searchParams }: PageProps<"/admin/or
   return (
     <div className="space-y-4">
       <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-1.5 text-xs">
-        {chip("/admin/orders", !status && !disputed && !managed, "Todos")}
+        {chip("/admin/orders", !status && !disputed && !managed && !needsLabel, "Todos")}
+        {chip("/admin/orders?label=1", needsLabel, "Necesitan guía")}
         {chip("/admin/orders?disputed=1", disputed, "Con problema")}
         {chip("/admin/orders?managed=1", managed, "Gestionados por entregar")}
         {ORDER_STATUSES.map((s) => chip(`/admin/orders?status=${s}`, status === s, ORDER_STATUS[s].label))}

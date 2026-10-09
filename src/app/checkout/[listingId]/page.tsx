@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { getPlatformSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/money";
 import { listingPhotoUrl } from "@/lib/storage";
 import { isStripeConfigured } from "@/lib/stripe";
@@ -37,7 +38,7 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<"
           : null;
 
   const supabase = await createClient();
-  const balanceCents = await getMyBalance(user.id);
+  const [balanceCents, settings] = await Promise.all([getMyBalance(user.id), getPlatformSettings()]);
   const { data: address } = await supabase
     .from("addresses")
     .select("*")
@@ -99,7 +100,7 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<"
         <CheckoutForm
           listingId={listing.id}
           priceCents={listing.price_cents}
-          shippingPriceCents={listing.shipping_price_cents}
+          shippingPriceCents={settings.shipping_price_cents}
           deliveryMethods={listing.delivery_methods}
           sellerLocation={[listing.municipality, listing.city].filter(Boolean).join(", ")}
           savedAddress={savedAddress}

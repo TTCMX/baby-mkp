@@ -242,7 +242,8 @@ async function importRow(
     municipality: warehouse.municipality,
     state: warehouse.state,
     delivery_methods: deliveryMethods,
-    shipping_price_cents: deliveryMethods.includes("shipping") ? (warehouse.shippingPriceCents ?? 0) : null,
+    // Shipping has one platform-wide price (Admin → Ajustes).
+    shipping_price_cents: null,
   };
 
   if (existing) {

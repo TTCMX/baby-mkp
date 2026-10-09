@@ -250,6 +250,58 @@ export async function completeOrderAsAdmin(orderId: string, note: string): Promi
   return { ok: "Pedido completado: el vendedor ya tiene el dinero en su saldo" };
 }
 
+// ------------------------------------------------------------ shipping labels
+
+const labelSchema = z.object({
+  carrier: z.string().trim().min(2, "Escribe la paquetería").max(60),
+  tracking: z.string().trim().min(4, "Escribe el número de guía").max(80),
+  url: z
+    .string()
+    .trim()
+    .max(2000)
+    .regex(/^https:\/\/\S+$/, "Pega el enlace de la guía (empieza con https://)"),
+});
+
+/** The prepaid label the platform bought for a shipping order: the seller downloads it and ships. */
+export async function attachShippingLabel(orderId: string, formData: FormData): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  if (!uuid.safeParse(orderId).success) return { error: "Pedido inválido" };
+  const parsed = labelSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+  const { carrier, tracking, url } = parsed.data;
+
+  const db = createAdminClient();
+  const { data: order, error } = await db
+    .from("orders")
+    .update({
+      tracking_carrier: carrier,
+      tracking_number: tracking,
+      shipping_label_url: url,
+      label_sent_at: new Date().toISOString(),
+    })
+    .eq("id", orderId)
+    .eq("delivery_method", "shipping")
+    .eq("status", "paid")
+    .select("seller_id")
+    .maybeSingle();
+  if (error) return fail(error, "No pudimos guardar la guía");
+  if (!order) return { error: "Solo se puede adjuntar a pedidos con envío que aún no salen" };
+
+  await db.from("notifications").insert({
+    user_id: order.seller_id,
+    type: "shipping_label",
+    title: "Tu guía de envío está lista",
+    body: `Descárgala e imprímela, pégala en el paquete y entrégalo en ${carrier}. Luego márcalo como enviado.`,
+    link: `/orders/${orderId}`,
+    data: { order_id: orderId },
+  });
+  emailNotificationsSoon();
+  await logAdminAction(admin.id, "order.label", "order", orderId, { carrier, tracking });
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  return { ok: "Guía enviada al vendedor" };
+}
+
 // --------------------------------------------------------------- withdrawals
 
 /** The SPEI transfer went out (paid) or bounced (failed: the amount goes back to the balance). */
@@ -291,6 +343,7 @@ const settingsSchema = z.object({
   max_images_per_listing: z.coerce.number().int().min(1).max(20),
   order_auto_complete_days: z.coerce.number().int().min(1).max(60),
   withdrawal_min: z.coerce.number().int().min(0).max(100_000),
+  shipping_price: z.coerce.number().int().min(0).max(10_000),
   listings_require_review: z.enum(["on", "off"]).optional(),
 });
 
@@ -307,6 +360,7 @@ export async function updatePlatformSettings(_prev: AdminResult | undefined, for
     max_images_per_listing: d.max_images_per_listing,
     order_auto_complete_days: d.order_auto_complete_days,
     withdrawal_min_cents: d.withdrawal_min * 100,
+    shipping_price_cents: d.shipping_price * 100,
     listings_require_review: d.listings_require_review === "on",
   };
 

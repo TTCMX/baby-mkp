@@ -52,7 +52,8 @@ export default async function TermsPage() {
         </li>
         <li>
           Cobramos una comisión del {s.platform_commission_percentage}% sobre el precio de cada venta, que se descuenta
-          antes de abonar tu saldo. Lo que paga el comprador por el envío es para cubrir la guía: no entra a tu saldo.
+          antes de abonar tu saldo. El envío tiene un precio fijo que paga el comprador y cubre la guía que te damos: no
+          entra a tu saldo.
         </li>
         <li>Podemos revisar, pedir cambios o retirar publicaciones que no cumplan estas reglas.</li>
       </List>
@@ -110,8 +111,8 @@ export default async function TermsPage() {
       <H2>7. Entregas</H2>
       <p>
         Cada producto indica cómo se entrega: en persona, entrega local o envío. En entregas en persona, quedar en un
-        lugar público y revisar el producto antes de confirmar es responsabilidad de ambas partes. En envíos, quien
-        vende debe empacar bien y compartir la guía.
+        lugar público y revisar el producto antes de confirmar es responsabilidad de ambas partes. En envíos, te
+        mandamos una guía prepagada: quien vende empaca bien el producto y lo entrega en la paquetería.
       </p>
 
       <H2>8. Conducta</H2>

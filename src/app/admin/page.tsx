@@ -17,7 +17,7 @@ export default async function AdminHome() {
 
   // Audit log read with the admin's own session (RLS: admins only).
   const supabase = await createClient();
-  const [{ data: log }, { count: managedToDeliver }] = await Promise.all([
+  const [{ data: log }, { count: managedToDeliver }, { count: needLabel }] = await Promise.all([
     supabase
       .from("admin_audit_log")
       .select("id, action, entity_type, entity_id, created_at, admin:profiles(display_name)")
@@ -28,9 +28,16 @@ export default async function AdminHome() {
       .select("id, seller:profiles!orders_seller_id_fkey!inner(is_managed)", { count: "exact", head: true })
       .eq("seller.is_managed", true)
       .in("status", ["paid", "in_delivery"]),
+    supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("delivery_method", "shipping")
+      .eq("status", "paid")
+      .is("shipping_label_url", null),
   ]);
 
   const alerts = [
+    { n: needLabel ?? 0, label: "envíos sin guía", href: "/admin/orders?label=1" },
     { n: m.pending_review, label: "productos por revisar", href: "/admin/listings?status=pending_review" },
     { n: m.open_disputes, label: "problemas reportados", href: "/admin/orders?disputed=1" },
     { n: m.pending_withdrawals, label: "retiros por pagar", href: "/admin/withdrawals" },

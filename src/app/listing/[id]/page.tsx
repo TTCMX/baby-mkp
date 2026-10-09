@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { MessageCircle, ShoppingBag } from "lucide-react";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { getPlatformSettings } from "@/lib/settings";
 import { track } from "@/lib/analytics/server";
 import { formatPrice } from "@/lib/money";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: PageProps<"/listing/[id]">): 
   };
 }
 
-function toViewData(l: ListingDetail): ListingViewData {
+function toViewData(l: ListingDetail, shippingPriceCents: number): ListingViewData {
   return {
     title: l.title,
     description: l.description,
@@ -58,7 +59,7 @@ function toViewData(l: ListingDetail): ListingViewData {
     city: l.city,
     municipality: l.municipality,
     deliveryMethods: l.delivery_methods,
-    shippingPriceCents: l.shipping_price_cents,
+    shippingPriceCents,
     images: l.listing_images.map((i) => ({
       src: listingPhotoUrl(i.storage_path),
       thumb: listingPhotoUrl(i.storage_path, "thumb"),
@@ -80,7 +81,7 @@ function toViewData(l: ListingDetail): ListingViewData {
 export default async function ListingPage({ params, searchParams }: PageProps<"/listing/[id]">) {
   const { id } = await params;
   const { published } = await searchParams;
-  const [listing, user] = await Promise.all([load(id), getCurrentUser()]);
+  const [listing, user, settings] = await Promise.all([load(id), getCurrentUser(), getPlatformSettings()]);
   if (!listing) notFound();
 
   const isOwner = user?.id === listing.seller_id;
@@ -130,7 +131,7 @@ export default async function ListingPage({ params, searchParams }: PageProps<"/
       )}
 
       <ListingView
-        data={toViewData(listing)}
+        data={toViewData(listing, settings.shipping_price_cents)}
         actions={
           isOwner ? null : (
             <BuyerActions listingId={listing.id} status={listing.status} saved={saved} signedIn={Boolean(user)} />

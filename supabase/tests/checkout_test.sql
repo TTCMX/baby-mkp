@@ -2,6 +2,8 @@
 begin;
 -- Fixtures use every category; production launches with only some turned on.
 update public.categories set is_active = true;
+-- Shipping has one platform-wide price ($150 here); a listing's own price is ignored.
+update public.platform_settings set value = '15000' where key = 'shipping_price_cents';
 
 create function pg_temp.assert(cond boolean, msg text) returns void language plpgsql as $$
 begin
@@ -28,7 +30,7 @@ insert into auth.users (id, email) values
 
 insert into public.listings (id, seller_id, title, category_id, condition, age_stages, price_cents, city, delivery_methods, shipping_price_cents, status)
 select '40000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000000a1', 'Carriola', id, 'good', '{0_3m}',
-  450000, 'CDMX', '{pickup,shipping}', 15000, 'active'
+  450000, 'CDMX', '{pickup,shipping}', 9900, 'active'
 from public.categories where slug = 'carriolas';
 
 -- Users cannot call the service-only functions
@@ -67,6 +69,20 @@ select pg_temp.assert((select platform_net_cents from public.orders where id = (
 select pg_temp.assert((select count(*) from public.payments where stripe_payment_intent_id = 'pi_1' and status = 'succeeded') = 1, 'payment row');
 select pg_temp.assert((select count(*) from public.notifications where data ->> 'order_id' = (select order_id from t)::text) = 2, 'notifications');
 select pg_temp.assert(public.cancel_pending_order((select order_id from t)) = false, 'paid order cannot be cancelled as pending');
+
+-- Prepaid label: the seller can't ship before the platform attaches it.
+grant select on t to authenticated;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
+select pg_temp.expect_error($$select public.order_mark_shipped((select order_id from t), '', '')$$, 'label_required');
+reset role;
+update public.orders set shipping_label_url = 'https://labels.example.com/1.pdf', tracking_carrier = 'Estafeta', tracking_number = '123456'
+where id = (select order_id from t);
+select pg_temp.expect_error($$update public.orders set shipping_label_url = 'http://insecure.example.com' where id = (select order_id from t)$$, 'shipping_label_url');
+set local role authenticated;
+select public.order_mark_shipped((select order_id from t), '', '');
+reset role;
+select pg_temp.assert((select status = 'in_delivery' and tracking_carrier = 'Estafeta' and tracking_number = '123456' from public.orders where id = (select order_id from t)), 'shipped keeping the label''s tracking');
 
 -- Expired checkout releases the listing
 update public.listings set status = 'active' where id = '40000000-0000-0000-0000-000000000001';

@@ -40,7 +40,6 @@ export default async function EditListingPage({ params }: PageProps<"/sell/[id]/
         city: listing.city,
         municipality: listing.municipality ?? "",
         deliveryMethods: listing.delivery_methods,
-        shippingPrice: centsToInput(listing.shipping_price_cents),
       }}
     />
   );

@@ -114,7 +114,16 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
                 {autoCompleteDays} días.
               </p>
             ) : (
-              <SellerActions orderId={order.id} status={order.status} deliveryMethod={order.delivery_method} />
+              <SellerActions
+                orderId={order.id}
+                status={order.status}
+                deliveryMethod={order.delivery_method}
+                label={{
+                  url: order.shipping_label_url,
+                  carrier: order.tracking_carrier,
+                  tracking: order.tracking_number,
+                }}
+              />
             )
           ) : (
             <BuyerActions orderId={order.id} autoCompleteDays={autoCompleteDays} />

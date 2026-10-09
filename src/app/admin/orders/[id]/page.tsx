@@ -6,7 +6,7 @@ import { formatPrice } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
 import { AuditHistory } from "@/features/admin/audit-history";
 import { ManagedOrderControls } from "@/features/admin/managed-controls";
-import { OrderControls } from "@/features/admin/order-controls";
+import { OrderControls, ShippingLabelForm } from "@/features/admin/order-controls";
 import { ORDER_STATUS } from "@/features/orders/status";
 
 const dateFmt = new Intl.DateTimeFormat("es-MX", {
@@ -77,6 +77,30 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
           )}
           <OrderControls id={o.id} status={o.status} openDispute={openDispute} />
         </section>
+
+        {o.delivery_method === "shipping" && ["paid", "in_delivery", "delivered", "completed"].includes(o.status) && (
+          <section className="space-y-3 rounded-2xl border bg-card p-4 text-sm">
+            <h2 className="font-extrabold">Guía de envío</h2>
+            {o.shipping_label_url ? (
+              <p>
+                <a href={o.shipping_label_url} target="_blank" rel="noreferrer" className="font-semibold text-primary">
+                  Ver guía
+                </a>{" "}
+                · enviada al vendedor el {t(o.label_sent_at)}
+              </p>
+            ) : (
+              <p className="font-semibold text-destructive">
+                Falta la guía: el vendedor no puede enviar el paquete hasta que se la mandes.
+              </p>
+            )}
+            {o.status === "paid" && !openDispute && (
+              <ShippingLabelForm
+                id={o.id}
+                current={{ carrier: o.tracking_carrier, tracking: o.tracking_number, url: o.shipping_label_url }}
+              />
+            )}
+          </section>
+        )}
 
         <section className="grid gap-2 rounded-2xl border bg-card p-4 text-sm sm:grid-cols-2">
           <p>

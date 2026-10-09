@@ -128,8 +128,11 @@ supabase/
 - **Dinero en centavos (enteros).** Comisiones en `platform_settings`, nunca hardcodeadas
   (`platform_commission_percentage`, `concierge_commission_percentage`, `concierge_min_price_cents`).
   Las órdenes guardan un _snapshot_ del desglose: precio, envío, comisión, fees de pago, neto vendedor, neto plataforma.
-  El envío es de la plataforma (envía y paga las guías): neto vendedor = precio − comisión; neto plataforma =
-  comisión + envío − fee de Stripe.
+  El envío es de la plataforma: un **precio fijo** (Admin → Ajustes, `shipping_price_cents`) que paga el comprador.
+  Neto vendedor = precio − comisión; neto plataforma = comisión + envío − fee de Stripe.
+- **Guías prepagadas:** en Admin → Pedidos → "Necesitan guía" el admin pega paquetería, número y enlace de la guía
+  (PDF); el vendedor recibe aviso y correo, la descarga y marca "Ya lo entregué". Un pedido con envío no puede
+  marcarse como enviado sin guía (`order_mark_shipped` → `label_required`).
   El cálculo vive en `src/lib/pricing.ts` (con tests).
 - **Público vs privado por tabla.** `profiles` es público; email, teléfono, Stripe y direcciones viven en
   `private_profiles` / `addresses`, visibles solo para el dueño (y admin).
