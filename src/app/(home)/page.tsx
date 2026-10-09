@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import { ChevronRight } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { AGE_STAGES, keysOf } from "@/lib/domain/constants";
@@ -29,6 +31,37 @@ import {
 // Stage chips cycle through the brand washes (decorative, not an encoding).
 const STAGE_TONES = ["bg-pink-wash", "bg-sky-wash", "bg-sun-wash"];
 
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
+/** schema.org: who we are (logo, contact) and the site's search, for Google's brand panel. */
+const siteJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: `${SITE_URL}/icon.png`,
+      description: SITE_TAGLINE,
+      areaServed: "MX",
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      inLanguage: "es-MX",
+      publisher: { "@id": `${SITE_URL}/#organization` },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${SITE_URL}/search?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
+};
+
 export default async function HomePage() {
   const user = await getCurrentUser();
   const city = user?.profile.city ?? null;
@@ -43,6 +76,10 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-8 md:gap-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd).replace(/</g, "\\u003c") }}
+      />
       {family ? (
         <FamilyHome parentName={user!.profile.display_name} babies={family.views} feeds={family.feeds} />
       ) : (

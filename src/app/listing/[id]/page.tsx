@@ -104,7 +104,9 @@ export default async function ListingPage({ params, searchParams }: PageProps<"/
       <script
         type="application/ld+json"
         // Escape "<" so listing text can never close the script tag.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd(listing)).replace(/</g, "\\u003c") }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productJsonLd(listing, settings.shipping_price_cents)).replace(/</g, "\\u003c"),
+        }}
       />
       {isOwner && published === "1" && listing.status === "active" && (
         <p className="rounded-2xl bg-accent p-4 text-sm font-semibold text-accent-foreground">
@@ -143,7 +145,7 @@ export default async function ListingPage({ params, searchParams }: PageProps<"/
 }
 
 /** schema.org Product, so search engines can show price and availability. */
-function productJsonLd(l: ListingDetail) {
+function productJsonLd(l: ListingDetail, shippingPriceCents: number) {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -160,6 +162,23 @@ function productJsonLd(l: ListingDetail) {
       itemCondition:
         l.condition === "new_with_tags" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
       availability: l.status === "active" ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+      ...(l.delivery_methods.includes("shipping") && {
+        shippingDetails: {
+          "@type": "OfferShippingDetails",
+          shippingRate: {
+            "@type": "MonetaryAmount",
+            value: (shippingPriceCents / 100).toFixed(2),
+            currency: l.currency,
+          },
+          shippingDestination: { "@type": "DefinedRegion", addressCountry: "MX" },
+        },
+      }),
+      // Used goods between families: no returns for size or taste (problems go through the order).
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "MX",
+        returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+      },
     },
   };
 }

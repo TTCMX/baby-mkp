@@ -6,8 +6,16 @@ import { activeFilterKeys, parseFilters } from "@/features/catalog/filters";
 import { getTopLevelCategories, searchListings } from "@/features/catalog/queries";
 
 export async function generateMetadata({ searchParams }: PageProps<"/search">): Promise<Metadata> {
-  const { q } = parseFilters(await searchParams);
-  return { title: q ? `${q} — Buscar` : "Explorar" };
+  const filters = parseFilters(await searchParams);
+  const { q } = filters;
+  // Only the bare catalog is indexable; every search/filter combination is a near-duplicate of it.
+  const refined = Boolean(q) || activeFilterKeys(filters).length > 0 || filters.page > 1;
+  return {
+    title: q ? `${q} — Buscar` : "Explorar",
+    description: "Ropa y artículos de bebé de segunda mano en México: compra seguro y vende lo que ya no usa.",
+    alternates: { canonical: "/search" },
+    ...(refined && { robots: { index: false, follow: true } }),
+  };
 }
 
 export default async function SearchPage({ searchParams }: PageProps<"/search">) {

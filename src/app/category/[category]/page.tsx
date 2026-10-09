@@ -6,9 +6,19 @@ import { CatalogView } from "@/features/catalog/catalog-view";
 import { activeFilterKeys, parseFilters } from "@/features/catalog/filters";
 import { getCategoryBySlug, searchListings } from "@/features/catalog/queries";
 
-export async function generateMetadata({ params }: PageProps<"/category/[category]">): Promise<Metadata> {
-  const category = await getCategoryBySlug((await params).category);
-  return { title: category ? `${category.name} de segunda mano` : "Categoría" };
+export async function generateMetadata({ params, searchParams }: PageProps<"/category/[category]">): Promise<Metadata> {
+  const { category: slug } = await params;
+  const category = await getCategoryBySlug(slug);
+  if (!category) return { title: "Categoría" };
+  const filters = parseFilters({ ...(await searchParams), category: slug });
+  // Filtered/paged views are near-duplicates of the category page itself.
+  const refined = Boolean(filters.q) || activeFilterKeys(filters).some((k) => k !== "category") || filters.page > 1;
+  return {
+    title: `${category.name} de bebé de segunda mano`,
+    description: `${category.name} de bebé de segunda mano en México, por edad y talla. Compra seguro y vende lo que tu bebé ya no usa.`,
+    alternates: { canonical: `/category/${slug}` },
+    ...(refined && { robots: { index: false, follow: true } }),
+  };
 }
 
 export default async function CategoryPage({ params, searchParams }: PageProps<"/category/[category]">) {
