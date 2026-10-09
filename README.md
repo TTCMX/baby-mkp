@@ -23,6 +23,8 @@ Para hacer admin a un usuario: `update profiles set role = 'admin' where usernam
 
 Pasos fuera del código (dominio, correos con Resend, plantillas de Supabase, Stripe en vivo, datos legales):
 [`docs/LANZAMIENTO.md`](docs/LANZAMIENTO.md).
+SEO, analítica y velocidad (Search Console, Merchant Center, Vercel Analytics, PageSpeed):
+[`docs/SEO-Y-MEDICION.md`](docs/SEO-Y-MEDICION.md).
 
 ## Despliegue de la base de datos
 

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, Nunito } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SiteHeader } from "@/components/layout/site-header";
 import { MobileNav } from "@/components/layout/mobile-nav";
@@ -16,6 +17,11 @@ export const metadata: Metadata = {
   description: SITE_TAGLINE,
   openGraph: { siteName: SITE_NAME, locale: "es_MX", type: "website" },
   twitter: { card: "summary_large_image" },
+  // Search Console / Bing Webmaster ownership (the HTML-tag method); unset = no tag.
+  verification: {
+    ...(process.env.GOOGLE_SITE_VERIFICATION && { google: process.env.GOOGLE_SITE_VERIFICATION }),
+    ...(process.env.BING_SITE_VERIFICATION && { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } }),
+  },
 };
 
 export const viewport: Viewport = {
@@ -33,6 +39,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <SiteFooter />
         <MobileNav />
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
