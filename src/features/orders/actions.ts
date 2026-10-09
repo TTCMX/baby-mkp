@@ -13,6 +13,7 @@ const id = z.uuid();
 const ERRORS: Record<string, string> = {
   invalid_transition: "Este pedido ya cambió de estado. Recarga la página.",
   reason_too_short: "Cuéntanos un poco más (mínimo 10 caracteres).",
+  label_required: "Aún no tienes la guía: te avisaremos en cuanto esté lista.",
 };
 
 async function call(fn: string, args: Record<string, unknown>, orderId: string): Promise<OrderActionResult> {

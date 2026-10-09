@@ -5,7 +5,7 @@
  * Policy (MVP):
  *   - The buyer pays item price + shipping.
  *   - The platform commission is a percentage of the ITEM price only.
- *   - Shipping is passed through to the seller (the seller ships).
+ *   - Shipping goes to the platform (it ships and pays the labels), not to the seller.
  *   - Payment processor fees are absorbed by the platform; they are known
  *     only after the charge, so platformNet is recomputed then.
  * The commission percentage comes from platform_settings, never hardcoded.
@@ -52,7 +52,7 @@ export function computeOrderAmounts(input: OrderAmountsInput): OrderAmounts {
     commissionPercentage,
     platformCommissionCents,
     paymentFeeCents,
-    sellerNetCents: itemPriceCents - platformCommissionCents + shippingCents,
-    platformNetCents: platformCommissionCents - paymentFeeCents,
+    sellerNetCents: itemPriceCents - platformCommissionCents,
+    platformNetCents: platformCommissionCents + shippingCents - paymentFeeCents,
   };
 }

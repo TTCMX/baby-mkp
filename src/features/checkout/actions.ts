@@ -44,9 +44,7 @@ export async function startCheckout(_prev: CheckoutState, formData: FormData): P
   const supabase = await createClient();
   const { data: listing } = await supabase
     .from("listings")
-    .select(
-      "id, title, price_cents, shipping_price_cents, status, sale_channel, listing_images(storage_path, position)",
-    )
+    .select("id, title, price_cents, status, sale_channel, listing_images(storage_path, position)")
     .eq("id", listingId)
     .maybeSingle();
   if (!listing || listing.status !== "active") return { error: CHECKOUT_ERRORS.listing_unavailable };
@@ -58,7 +56,7 @@ export async function startCheckout(_prev: CheckoutState, formData: FormData): P
       : settings.platform_commission_percentage;
   const amounts = computeOrderAmounts({
     itemPriceCents: listing.price_cents,
-    shippingCents: deliveryMethod === "shipping" ? (listing.shipping_price_cents ?? 0) : 0,
+    shippingCents: deliveryMethod === "shipping" ? settings.shipping_price_cents : 0,
     commissionPercentage: commission,
   });
 

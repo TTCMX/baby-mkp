@@ -14,6 +14,7 @@ export const AUDIT_LABELS: Record<string, string> = {
   "managed.withdrawal": "Pidió un retiro para un vendedor gestionado",
   "order.ship": "Marcó un pedido como enviado",
   "order.deliver": "Marcó un pedido como entregado",
+  "order.label": "Envió la guía de envío al vendedor",
   "withdrawal.failed": "Marcó un retiro como no pagado",
   "settings.update": "Cambió la configuración",
   "category.create": "Creó una categoría",

@@ -11,6 +11,8 @@ const settingsSchema = z.object({
   default_currency: z.string().length(3),
   order_auto_complete_days: z.number().int().min(1).max(60).default(3),
   withdrawal_min_cents: z.number().int().nonnegative().default(0),
+  // Fixed price of shipping (the platform sends the seller a prepaid label).
+  shipping_price_cents: z.number().int().nonnegative().default(9900),
   managed_contact_email: z.string().default(""),
   managed_contact_phone: z.string().default(""),
   legal_name: z.string().default(""),

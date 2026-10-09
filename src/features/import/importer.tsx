@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DELIVERY_METHODS, keysOf, type DeliveryMethod } from "@/lib/domain/constants";
-import { parsePriceToCents } from "@/lib/money";
 import { parseCsv } from "./csv";
 import { readSheet, TEMPLATE_CSV, type ImportCategory, type RowResult } from "./rows";
 
@@ -47,7 +46,6 @@ export function Importer({ categories, maxPhotos }: { categories: ImportCategory
   const [municipality, setMunicipality] = useState("");
   const [state, setState] = useState("");
   const [delivery, setDelivery] = useState<DeliveryMethod[]>(["pickup"]);
-  const [shippingPrice, setShippingPrice] = useState("");
   const [phase, setPhase] = useState<"idle" | "sellers" | "rows" | "done">("idle");
   const [outcomes, setOutcomes] = useState<Outcome[]>([]);
   const [fatal, setFatal] = useState<string | null>(null);
@@ -82,15 +80,13 @@ export function Importer({ categories, maxPhotos }: { categories: ImportCategory
     });
   }
 
-  const shippingCents = delivery.includes("shipping") ? (parsePriceToCents(shippingPrice || "0") ?? -1) : null;
-  const warehouseValid =
-    city.trim().length > 0 && delivery.length > 0 && (shippingCents === null || shippingCents >= 0);
+  const warehouseValid = city.trim().length > 0 && delivery.length > 0;
   const warehouse = {
     city: city.trim(),
     municipality: municipality.trim() || null,
     state: state.trim() || null,
     deliveryMethods: delivery,
-    shippingPriceCents: shippingCents,
+    shippingPriceCents: null,
   };
 
   async function post(phaseName: "sellers" | "rows", rows: Sheet["rows"]) {
@@ -298,15 +294,9 @@ export function Importer({ categories, maxPhotos }: { categories: ImportCategory
             ))}
           </fieldset>
           {delivery.includes("shipping") && (
-            <div className="max-w-xs space-y-1.5">
-              <Label htmlFor="shipping">Costo de envío (MXN, 0 = incluido)</Label>
-              <Input
-                id="shipping"
-                inputMode="decimal"
-                value={shippingPrice}
-                onChange={(e) => setShippingPrice(e.target.value)}
-              />
-            </div>
+            <p className="text-xs text-muted-foreground">
+              El envío se cobra al precio fijo de la plataforma (Admin → Ajustes).
+            </p>
           )}
           <div className="flex flex-wrap items-center gap-3">
             <Button size="lg" disabled={!warehouseValid || running} onClick={run}>

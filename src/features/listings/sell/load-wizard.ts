@@ -23,6 +23,7 @@ export async function loadWizardContext(user: SessionUser) {
     })),
     brands,
     maxImages: settings.max_images_per_listing,
+    shippingPriceCents: settings.shipping_price_cents,
     seller: {
       displayName: user.profile.display_name,
       avatarUrl: user.profile.avatar_url,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Doc, H2 } from "@/features/legal/doc";
+import { formatPrice } from "@/lib/money";
 import { getPlatformSettings } from "@/lib/settings";
 import { SITE_NAME } from "@/lib/site";
 
@@ -71,8 +72,9 @@ export default async function HelpPage() {
         </Q>
         <Q q="¿Cuánto cobran?">
           <p>
-            Publicar es gratis. Cuando vendes, cobramos el {s.platform_commission_percentage}% del precio del producto;
-            el envío que paga el comprador es completo para ti.
+            Publicar es gratis. Cuando vendes, cobramos el {s.platform_commission_percentage}% del precio del producto.
+            El envío lo paga el comprador a un precio fijo de {formatPrice(s.shipping_price_cents)}: nosotros te
+            mandamos la guía prepagada y tú solo empacas y entregas en la paquetería.
           </p>
         </Q>
         <Q q="¿Cuándo recibo mi dinero?">

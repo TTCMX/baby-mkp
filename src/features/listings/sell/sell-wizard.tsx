@@ -54,7 +54,6 @@ export type WizardFields = {
   city: string;
   municipality: string;
   deliveryMethods: DeliveryMethod[];
-  shippingPrice: string;
 };
 
 type Props = {
@@ -66,6 +65,7 @@ type Props = {
   categories: WizardCategory[];
   brands: string[];
   maxImages: number;
+  shippingPriceCents: number;
   seller: ListingViewData["seller"];
 };
 
@@ -74,7 +74,7 @@ const STEPS = ["Fotos", "Detalles", "Descripción", "Entrega", "Vista previa"] a
 type Errors = Partial<Record<string, string>>;
 
 export function SellWizard(props: Props) {
-  const { userId, listingId, mode, categories, brands, maxImages, seller } = props;
+  const { userId, listingId, mode, categories, brands, maxImages, shippingPriceCents, seller } = props;
   const router = useRouter();
   const [step, setStep] = useState(0);
   // Only one category on (launch: clothes only) → already chosen.
@@ -103,7 +103,6 @@ export function SellWizard(props: Props) {
   // Form fields whose validation error is reported under a different key.
   const ERROR_KEY: Partial<Record<keyof WizardFields, string>> = {
     price: "priceCents",
-    shippingPrice: "shippingPriceCents",
   };
   const set = <K extends keyof WizardFields>(key: K, value: WizardFields[K]) => {
     setFields((f) => ({ ...f, [key]: value }));
@@ -201,7 +200,8 @@ export function SellWizard(props: Props) {
       city: fields.city,
       municipality: fields.municipality,
       deliveryMethods: fields.deliveryMethods,
-      shippingPriceCents: fields.shippingPrice ? parsePriceToCents(fields.shippingPrice) : null,
+      // Shipping has one platform-wide price now (Admin → Ajustes).
+      shippingPriceCents: null,
       images: photos
         .filter((p) => p.status === "done" && p.path)
         .map((p) => ({ storage_path: p.path!, width: p.width, height: p.height })),
@@ -212,7 +212,7 @@ export function SellWizard(props: Props) {
     ["images"],
     ["title", "categoryId", "condition", "ageStages", "priceCents", "bundleItemCount"],
     ["description"],
-    ["city", "municipality", "deliveryMethods", "shippingPriceCents"],
+    ["city", "municipality", "deliveryMethods"],
     [],
   ];
 
@@ -285,7 +285,7 @@ export function SellWizard(props: Props) {
     city: fields.city,
     municipality: fields.municipality || null,
     deliveryMethods: fields.deliveryMethods,
-    shippingPriceCents: fields.shippingPrice ? parsePriceToCents(fields.shippingPrice) : null,
+    shippingPriceCents,
     images: photos
       .filter((p) => p.status === "done")
       .map((p) => ({
@@ -548,21 +548,10 @@ export function SellWizard(props: Props) {
             </Field>
 
             {fields.deliveryMethods.includes("shipping") && (
-              <Field label="Costo de envío (opcional)" htmlFor="shippingPrice" error={errors.shippingPriceCents}>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">
-                    $
-                  </span>
-                  <Input
-                    id="shippingPrice"
-                    inputMode="decimal"
-                    className="pl-8"
-                    value={fields.shippingPrice}
-                    placeholder="Déjalo vacío si el envío va incluido en el precio"
-                    onChange={(e) => set("shippingPrice", e.target.value)}
-                  />
-                </div>
-              </Field>
+              <p className="rounded-2xl bg-sky-wash p-4 text-sm">
+                <span className="font-bold">Envío: {formatPrice(shippingPriceCents)}</span>, lo paga quien compra.
+                Cuando se venda te mandamos la guía prepagada: solo empacas y lo entregas en la paquetería.
+              </p>
             )}
           </div>
         )}
