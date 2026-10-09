@@ -43,6 +43,8 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
   }
 
   const isSeller = order.seller_id === user.id;
+  // Admins can open anyone's order (RLS): they see it read-only, actions live in /admin.
+  const isParty = isSeller || order.buyer_id === user.id;
   const status = ORDER_STATUS[order.status];
   const cover = coverOf(order);
   const waitingWebhook = paid === "1" && order.status === "pending_payment";
@@ -104,7 +106,17 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
         </div>
       </Link>
 
-      {open && (
+      {!isParty && (
+        <p className="rounded-2xl border border-primary/40 bg-primary/5 p-4 text-sm">
+          Estás viendo el pedido de otra persona como admin. Para actuar sobre él ve a{" "}
+          <Link href={`/admin/orders/${order.id}`} className="font-semibold text-primary">
+            Admin → Pedidos
+          </Link>
+          .
+        </p>
+      )}
+
+      {open && isParty && (
         <section className="rounded-2xl border bg-card p-4">
           <h2 className="mb-3 font-extrabold">{isSeller ? "Siguiente paso" : "¿Ya lo tienes?"}</h2>
           {isSeller ? (
@@ -226,7 +238,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
         )}
       </section>
 
-      {order.status === "completed" && (
+      {order.status === "completed" && isParty && (
         <section className="space-y-3 rounded-2xl border bg-card p-4 text-sm">
           <h2 className="font-extrabold">Reseñas</h2>
           {myReview ? (
