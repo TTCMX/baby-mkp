@@ -3,26 +3,13 @@
 import { startTransition, useActionState, useState } from "react";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AddressFields, type SavedAddress } from "./address-fields";
 import { DELIVERY_METHODS, type DeliveryMethod } from "@/lib/domain/constants";
 import { formatPrice } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { startCheckout, type CheckoutState } from "./actions";
 
-export type SavedAddress = Partial<{
-  recipientName: string;
-  phone: string;
-  street: string;
-  exteriorNumber: string;
-  interiorNumber: string;
-  neighborhood: string;
-  municipality: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  references: string;
-}>;
+export type { SavedAddress } from "./address-fields";
 
 type Props = {
   listingId: string;
@@ -120,77 +107,7 @@ export function CheckoutForm({
           <p className="-mt-1 text-xs text-muted-foreground">
             Solo el vendedor verá tu dirección, y solo después de pagar.
           </p>
-          <Field
-            label="Nombre de quien recibe"
-            name="recipientName"
-            autoComplete="name"
-            defaultValue={savedAddress.recipientName}
-            error={err("recipientName")}
-          />
-          <Field
-            label="Teléfono"
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            defaultValue={savedAddress.phone}
-            error={err("phone")}
-          />
-          <Field
-            label="Calle"
-            name="street"
-            autoComplete="address-line1"
-            defaultValue={savedAddress.street}
-            error={err("street")}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="Núm. exterior"
-              name="exteriorNumber"
-              defaultValue={savedAddress.exteriorNumber}
-              error={err("exteriorNumber")}
-            />
-            <Field label="Núm. interior (opcional)" name="interiorNumber" defaultValue={savedAddress.interiorNumber} />
-          </div>
-          <Field
-            label="Colonia"
-            name="neighborhood"
-            defaultValue={savedAddress.neighborhood}
-            error={err("neighborhood")}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="Código postal"
-              name="postalCode"
-              inputMode="numeric"
-              autoComplete="postal-code"
-              maxLength={5}
-              defaultValue={savedAddress.postalCode}
-              error={err("postalCode")}
-            />
-            <Field
-              label="Alcaldía / municipio"
-              name="municipality"
-              defaultValue={savedAddress.municipality}
-              error={err("municipality")}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="Ciudad"
-              name="city"
-              autoComplete="address-level2"
-              defaultValue={savedAddress.city}
-              error={err("city")}
-            />
-            <Field
-              label="Estado"
-              name="state"
-              autoComplete="address-level1"
-              defaultValue={savedAddress.state}
-              error={err("state")}
-            />
-          </div>
-          <Field label="Referencias (opcional)" name="references" defaultValue={savedAddress.references} />
+          <AddressFields saved={savedAddress} err={err} />
         </fieldset>
       )}
 
@@ -244,21 +161,6 @@ export function CheckoutForm({
         producto.
       </p>
     </form>
-  );
-}
-
-function Field({
-  label,
-  name,
-  error,
-  ...props
-}: { label: string; name: string; error?: string } & React.ComponentProps<"input">) {
-  return (
-    <div className="space-y-1.5">
-      <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} aria-invalid={!!error} {...props} />
-      {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
-    </div>
   );
 }
 

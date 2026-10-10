@@ -99,6 +99,7 @@ async function orderStep(fn: "order_mark_shipped" | "order_mark_delivered", orde
   const { error } = await supabase.rpc(fn, { p_order_id: orderId, ...args });
   if (error) {
     if (error.message.includes("invalid_transition")) return { error: "El pedido ya cambió de estado" };
+    if (error.message.includes("label_required")) return { error: "Primero adjunta la guía de envío (abajo)" };
     console.error(`[admin] ${fn} failed`, error);
     return { error: "No pudimos actualizar el pedido" };
   }

@@ -15,6 +15,7 @@ import { BuyerActions, ReviewForm, SellerActions } from "@/features/orders/order
 import { coverOf, getOrder, getOrderExtras } from "@/features/orders/queries";
 import { ORDER_STATUS } from "@/features/orders/status";
 import { completeOrderIfDue } from "@/features/orders/completion";
+import { getDefaultAddress } from "@/features/checkout/addresses";
 
 export const metadata: Metadata = { title: "Pedido" };
 
@@ -54,6 +55,12 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
   const myReview = extras.reviews.find((r) => r.reviewer_id === user.id);
   const theirReview = extras.reviews.find((r) => r.reviewer_id !== user.id);
   const open = ["paid", "in_delivery", "delivered"].includes(order.status) && !order.disputed_at;
+  // The seller tells us where a shipping package leaves from, so we can buy its label.
+  const needsPickup =
+    isSeller && order.delivery_method === "shipping" && order.status === "paid" && !order.shipping_label_url;
+  const pickup = needsPickup
+    ? { current: order.pickup_address, saved: order.pickup_address ? {} : await getDefaultAddress(user.id) }
+    : undefined;
 
   return (
     <div className="mx-auto max-w-xl space-y-5">
@@ -135,10 +142,15 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
                   carrier: order.tracking_carrier,
                   tracking: order.tracking_number,
                 }}
+                pickup={pickup}
               />
             )
           ) : (
-            <BuyerActions orderId={order.id} autoCompleteDays={autoCompleteDays} />
+            <BuyerActions
+              orderId={order.id}
+              autoCompleteDays={autoCompleteDays}
+              notShippedYet={order.delivery_method === "shipping" && order.status === "paid"}
+            />
           )}
         </section>
       )}
@@ -197,7 +209,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
       <section className="space-y-2 rounded-2xl border bg-card p-4 text-sm">
         <h2 className="font-extrabold">{isSeller ? "Tu venta" : "Tu pago"}</h2>
         <Row label="Producto" value={formatPrice(order.item_price_cents)} />
-        {order.shipping_cents > 0 && <Row label="Envío" value={formatPrice(order.shipping_cents)} />}
+        {order.shipping_cents > 0 && !isSeller && <Row label="Envío" value={formatPrice(order.shipping_cents)} />}
         {isSeller ? (
           <>
             <Row

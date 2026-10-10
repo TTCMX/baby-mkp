@@ -81,6 +81,18 @@ export default async function AdminOrder({ params }: PageProps<"/admin/orders/[i
         {o.delivery_method === "shipping" && ["paid", "in_delivery", "delivered", "completed"].includes(o.status) && (
           <section className="space-y-3 rounded-2xl border bg-card p-4 text-sm">
             <h2 className="font-extrabold">Guía de envío</h2>
+            <p>
+              <span className="text-muted-foreground">Sale de: </span>
+              {seller.is_managed ? (
+                "la bodega"
+              ) : o.pickup_address ? (
+                Object.values(o.pickup_address as Record<string, string>)
+                  .filter(Boolean)
+                  .join(", ")
+              ) : (
+                <span className="font-semibold text-destructive">el vendedor aún no indica desde dónde envía</span>
+              )}
+            </p>
             {o.shipping_label_url ? (
               <p>
                 <a href={o.shipping_label_url} target="_blank" rel="noreferrer" className="font-semibold text-primary">

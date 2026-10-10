@@ -12,12 +12,14 @@ const dateFmt = new Intl.DateTimeFormat("es-MX", {
   timeZone: "America/Mexico_City",
 });
 
+const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
+
 export default async function AdminHome() {
   const { all: m, recent: m30 } = await getMetrics(30);
 
   // Audit log read with the admin's own session (RLS: admins only).
   const supabase = await createClient();
-  const [{ data: log }, { count: managedToDeliver }, { count: needLabel }] = await Promise.all([
+  const [{ data: log }, { count: managedToDeliver }, { count: needLabel }, { count: stuck }] = await Promise.all([
     supabase
       .from("admin_audit_log")
       .select("id, action, entity_type, entity_id, created_at, admin:profiles(display_name)")
@@ -34,10 +36,17 @@ export default async function AdminHome() {
       .eq("delivery_method", "shipping")
       .eq("status", "paid")
       .is("shipping_label_url", null),
+    // On the road for over 10 days: lost package, or the seller forgot to mark it delivered.
+    supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "in_delivery")
+      .lt("shipped_at", daysAgo(10)),
   ]);
 
   const alerts = [
     { n: needLabel ?? 0, label: "envíos sin guía", href: "/admin/orders?label=1" },
+    { n: stuck ?? 0, label: "envíos en camino hace más de 10 días", href: "/admin/orders?status=in_delivery" },
     { n: m.pending_review, label: "productos por revisar", href: "/admin/listings?status=pending_review" },
     { n: m.open_disputes, label: "problemas reportados", href: "/admin/orders?disputed=1" },
     { n: m.pending_withdrawals, label: "retiros por pagar", href: "/admin/withdrawals" },

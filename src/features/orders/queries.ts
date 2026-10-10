@@ -25,6 +25,7 @@ export type OrderRow = {
   tracking_carrier: string | null;
   tracking_number: string | null;
   shipping_label_url: string | null;
+  pickup_address: Record<string, string> | null;
   disputed_at: string | null;
   dispute_reason: string | null;
   cancelled_at: string | null;
