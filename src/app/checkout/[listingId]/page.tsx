@@ -7,8 +7,8 @@ import { getPlatformSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/money";
 import { listingPhotoUrl } from "@/lib/storage";
 import { isStripeConfigured } from "@/lib/stripe";
-import { createClient } from "@/lib/supabase/server";
 import { buttonVariants } from "@/components/ui/button";
+import { getDefaultAddress } from "@/features/checkout/addresses";
 import { CheckoutForm, type SavedAddress } from "@/features/checkout/checkout-form";
 import { releaseCheckout } from "@/features/checkout/release";
 import { getListingDetail } from "@/features/listings/queries";
@@ -37,28 +37,10 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<"
           ? "Los pagos se activarán muy pronto."
           : null;
 
-  const supabase = await createClient();
   const [balanceCents, settings] = await Promise.all([getMyBalance(user.id), getPlatformSettings()]);
-  const { data: address } = await supabase
-    .from("addresses")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("is_default", true)
-    .maybeSingle();
-  const savedAddress: SavedAddress = address
-    ? {
-        recipientName: address.recipient_name,
-        phone: address.phone ?? "",
-        street: address.street,
-        exteriorNumber: address.exterior_number ?? "",
-        interiorNumber: address.interior_number ?? "",
-        neighborhood: address.neighborhood ?? "",
-        municipality: address.municipality,
-        city: address.city,
-        state: address.state,
-        postalCode: address.postal_code,
-        references: address.references_note ?? "",
-      }
+  const saved = await getDefaultAddress(user.id);
+  const savedAddress: SavedAddress = Object.keys(saved).length
+    ? saved
     : {
         recipientName: user.profile.display_name,
         city: user.profile.city ?? "",

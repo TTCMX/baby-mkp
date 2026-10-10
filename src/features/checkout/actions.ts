@@ -13,6 +13,7 @@ import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getMyBalance } from "@/features/wallet/queries";
+import { saveDefaultAddress } from "./addresses";
 import { addressSchema, CHECKOUT_ERRORS, checkoutSchema } from "./schema";
 import { trackOrderPaid } from "./webhook";
 import { emailNotificationsSoon } from "@/features/notifications/emails";
@@ -174,34 +175,4 @@ export async function startCheckout(_prev: CheckoutState, formData: FormData): P
 
   await track("checkout_started", user.id, startedProps);
   redirect(sessionUrl);
-}
-
-async function saveDefaultAddress(userId: string, a: z.infer<typeof addressSchema>) {
-  const supabase = await createClient();
-  const row = {
-    user_id: userId,
-    recipient_name: a.recipientName,
-    phone: a.phone,
-    street: a.street,
-    exterior_number: a.exteriorNumber,
-    interior_number: a.interiorNumber || null,
-    neighborhood: a.neighborhood,
-    municipality: a.municipality,
-    city: a.city,
-    state: a.state,
-    postal_code: a.postalCode,
-    references_note: a.references || null,
-    is_default: true,
-  };
-  const { data: existing } = await supabase
-    .from("addresses")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("is_default", true)
-    .maybeSingle();
-  const { error } = existing
-    ? await supabase.from("addresses").update(row).eq("id", existing.id)
-    : await supabase.from("addresses").insert(row);
-  // Not fatal for the purchase (the address is snapshotted on the order).
-  if (error) console.error("[checkout] could not save address", error);
 }

@@ -3,11 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { saveDefaultAddress } from "@/features/checkout/addresses";
+import { addressSchema } from "@/features/checkout/schema";
 import { trackCompletion } from "./completion";
 import { emailNotificationsSoon } from "@/features/notifications/emails";
 
 export type OrderActionResult = { error?: string };
+export type PickupAddressState = { ok?: boolean; error?: string; fieldErrors?: Record<string, string> } | undefined;
 
 const id = z.uuid();
 const ERRORS: Record<string, string> = {
@@ -94,4 +98,42 @@ export async function submitReview(
   }
   revalidatePath(`/orders/${orderId}`);
   return {};
+}
+
+/**
+ * Where a shipping package leaves from: the platform needs it to buy the label.
+ * Snapshot on the order (and saved as the seller's default address).
+ */
+export async function savePickupAddress(
+  orderId: string,
+  _prev: PickupAddressState,
+  formData: FormData,
+): Promise<PickupAddressState> {
+  const user = await requireUser(`/orders/${orderId}`);
+  if (!id.safeParse(orderId).success) return { error: "Pedido inválido" };
+  const parsed = addressSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) fieldErrors[String(issue.path[0])] ??= issue.message;
+    return { error: "Revisa la dirección", fieldErrors };
+  }
+  // Read as the user (RLS): only the order's seller gets a row back.
+  const supabase = await createClient();
+  const { data: order } = await supabase
+    .from("orders")
+    .select("seller_id, delivery_method, status, shipping_label_url")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!order || order.seller_id !== user.id) return { error: "Pedido no encontrado" };
+  if (order.delivery_method !== "shipping" || order.status !== "paid" || order.shipping_label_url) {
+    return { error: "Este pedido ya no necesita la dirección de envío" };
+  }
+  const { error } = await createAdminClient().from("orders").update({ pickup_address: parsed.data }).eq("id", orderId);
+  if (error) {
+    console.error("[orders] pickup address failed", error);
+    return { error: "No pudimos guardar la dirección. Intenta de nuevo." };
+  }
+  await saveDefaultAddress(user.id, parsed.data);
+  revalidatePath(`/orders/${orderId}`);
+  return { ok: true };
 }

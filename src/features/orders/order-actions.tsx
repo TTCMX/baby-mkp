@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { CheckCircle2, Download, PackageCheck, Star, Truck, TriangleAlert } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,9 +12,12 @@ import {
   markDelivered,
   markShipped,
   reportProblem,
+  savePickupAddress,
   submitReview,
   type OrderActionResult,
+  type PickupAddressState,
 } from "./actions";
+import { AddressFields, type SavedAddress } from "@/features/checkout/address-fields";
 
 function useAction() {
   const [pending, start] = useTransition();
@@ -41,22 +44,42 @@ export function SellerActions({
   status,
   deliveryMethod,
   label,
+  pickup,
 }: {
   orderId: string;
   status: OrderStatus;
   deliveryMethod: DeliveryMethod;
   label: { url: string | null; carrier: string | null; tracking: string | null };
+  /** Where the package leaves from (null until the seller says) and their saved address to start from. */
+  pickup?: { current: Record<string, string> | null; saved: SavedAddress };
 }) {
   const { pending, error, run } = useAction();
 
   // Shipping: the platform sends a prepaid label; the seller prints it and drops the package off.
   if (status === "paid" && deliveryMethod === "shipping") {
     if (!label.url) {
+      if (pickup && !pickup.current) return <PickupAddressForm orderId={orderId} saved={pickup.saved} />;
       return (
-        <p className="text-sm">
-          Estamos preparando tu <b>guía prepagada</b>. Te avisaremos por correo en cuanto esté lista; mientras, deja el
-          producto limpio y empacado.
-        </p>
+        <div className="space-y-2 text-sm">
+          <p>
+            Estamos preparando tu <b>guía prepagada</b>. Te avisaremos por correo en cuanto esté lista; mientras, deja
+            el producto limpio y empacado.
+          </p>
+          {pickup?.current && (
+            <p className="text-xs text-muted-foreground">
+              Sale de:{" "}
+              {[
+                pickup.current.street,
+                pickup.current.exteriorNumber,
+                pickup.current.neighborhood,
+                pickup.current.postalCode,
+                pickup.current.municipality,
+              ]
+                .filter(Boolean)
+                .join(", ")}
+            </p>
+          )}
+        </div>
       );
     }
     return (
@@ -99,7 +122,16 @@ export function SellerActions({
   return null;
 }
 
-export function BuyerActions({ orderId, autoCompleteDays }: { orderId: string; autoCompleteDays: number }) {
+export function BuyerActions({
+  orderId,
+  autoCompleteDays,
+  notShippedYet,
+}: {
+  orderId: string;
+  autoCompleteDays: number;
+  /** A shipping order still being prepared: there's nothing to receive yet. */
+  notShippedYet: boolean;
+}) {
   const { pending, error, run } = useAction();
   const [reporting, setReporting] = useState(false);
   const [reason, setReason] = useState("");
@@ -130,6 +162,21 @@ export function BuyerActions({ orderId, autoCompleteDays }: { orderId: string; a
           </Button>
         </div>
         <ErrorText error={error} />
+      </div>
+    );
+  }
+  if (notShippedYet) {
+    return (
+      <div className="space-y-2 text-sm">
+        <p>El vendedor está preparando tu paquete. Te avisaremos por correo con el número de guía en cuanto salga.</p>
+        <Button
+          variant="ghost"
+          className="w-full text-destructive"
+          disabled={pending}
+          onClick={() => setReporting(true)}
+        >
+          <TriangleAlert /> Reportar un problema
+        </Button>
       </div>
     );
   }
@@ -194,5 +241,30 @@ export function ReviewForm({ orderId, revieweeName }: { orderId: string; reviewe
       </Button>
       <ErrorText error={error} />
     </div>
+  );
+}
+
+/** Before the platform can buy the label it needs the package's origin. */
+function PickupAddressForm({ orderId, saved }: { orderId: string; saved: SavedAddress }) {
+  const [state, action, pending] = useActionState<PickupAddressState, FormData>(
+    savePickupAddress.bind(null, orderId),
+    undefined,
+  );
+  const err = (name: string) => state?.fieldErrors?.[name];
+  return (
+    <form action={action} className="space-y-3">
+      <p className="text-sm">
+        <b>¿Desde dónde lo envías?</b> Con esta dirección compramos tu guía prepagada; no la verá el comprador.
+      </p>
+      <AddressFields saved={saved} err={err} />
+      {state?.error && (
+        <p role="alert" className="text-sm font-semibold text-destructive">
+          {state.error}
+        </p>
+      )}
+      <Button type="submit" className="w-full" disabled={pending}>
+        {pending ? "Guardando…" : "Guardar dirección de envío"}
+      </Button>
+    </form>
   );
 }
